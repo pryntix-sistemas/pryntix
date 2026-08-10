@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fornecedores — PRYNTIX</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+
+<div id="sidebar"></div>
+<div id="sidebar-overlay"></div>
+
+<div id="conteudo">
+  <header class="pagina-topo">
+    <button id="btn-menu-mobile"><i class="ti ti-menu-2"></i></button>
+    <span class="logo-mark">PRYN<span>TIX</span></span>
+    <div></div>
+  </header>
+
+  <div class="pagina">
+    <div class="pagina-header">
+      <h1 class="pagina-titulo">Fornecedores</h1>
+      <button class="btn btn-primario" id="btnNovo">
+        <i class="ti ti-plus"></i>Novo fornecedor
+      </button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card destaque">
+        <div class="kpi-label">Total de fornecedores</div>
+        <div class="kpi-valor" id="kpiTotal">—</div>
+      </div>
+    </div>
+
+    <!-- Busca -->
+    <div class="tabela-wrap">
+      <div class="tabela-filtros">
+        <input type="text" class="input-busca" id="campoBusca" placeholder="Buscar por nome, CNPJ ou cidade...">
+      </div>
+
+      <!-- Estado vazio -->
+      <div class="vazio" id="estadoVazio" style="display:none">
+        <i class="ti ti-truck"></i>
+        <p>Nenhum fornecedor cadastrado ainda.</p>
+        <br>
+        <button class="btn btn-primario" onclick="abrirModalNovo()">
+          <i class="ti ti-plus"></i>Cadastrar fornecedor
+        </button>
+      </div>
+
+      <!-- Tabela -->
+      <table id="tabela" style="display:none">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>CNPJ</th>
+            <th>Telefone</th>
+            <th>Cidade</th>
+            <th>Email</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tabelaBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal cadastro/edição -->
+<div class="modal-overlay" id="modalForm">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-titulo" id="modalTitulo">Novo fornecedor</span>
+      <button class="modal-fechar" onclick="fecharModal('modalForm')">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fId">
+      <div class="form-linha form-2">
+        <div class="form-grupo" style="grid-column:1/-1">
+          <label>Nome *</label>
+          <input type="text" id="fNome" placeholder="Nome do fornecedor">
+        </div>
+      </div>
+      <div class="form-linha form-2">
+        <div class="form-grupo">
+          <label>CNPJ</label>
+          <input type="text" id="fCnpj" placeholder="00.000.000/0000-00">
+        </div>
+        <div class="form-grupo">
+          <label>Telefone</label>
+          <input type="text" id="fTelefone" placeholder="(21) 99999-9999">
+        </div>
+      </div>
+      <div class="form-linha form-2">
+        <div class="form-grupo">
+          <label>Email</label>
+          <input type="email" id="fEmail" placeholder="contato@fornecedor.com">
+        </div>
+        <div class="form-grupo">
+          <label>Cidade</label>
+          <input type="text" id="fCidade" placeholder="Niterói">
+        </div>
+      </div>
+      <div class="form-linha">
+        <div class="form-grupo">
+          <label>Endereço</label>
+          <input type="text" id="fEndereco" placeholder="Rua, número, bairro">
+        </div>
+      </div>
+      <div class="form-linha">
+        <div class="form-grupo">
+          <label>Observações</label>
+          <textarea id="fObs" rows="3" placeholder="Informações adicionais..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secundario" onclick="fecharModal('modalForm')">Cancelar</button>
+      <button class="btn btn-primario" id="btnSalvar" onclick="salvarFornecedor()">
+        <i class="ti ti-check"></i>Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar exclusão -->
+<div class="modal-overlay" id="modalExcluir">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-titulo">Excluir fornecedor</span>
+      <button class="modal-fechar" onclick="fecharModal('modalExcluir')">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--text-secondary);line-height:1.6">
+        Tem certeza que deseja excluir <strong id="nomeExcluir"></strong>?
+        Esta ação não pode ser desfeita.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secundario" onclick="fecharModal('modalExcluir')">Cancelar</button>
+      <button class="btn btn-perigo" id="btnConfirmarExcluir">
+        <i class="ti ti-trash"></i>Excluir
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/menu.js"></script>
+<script>
+let fornecedores = [];
+let idExcluir = null;
+
+// Inicialização
+function init() {
+  verificarSessao();
+  renderizarMenu('fornecedores.html');
+  document.getElementById('btnNovo').addEventListener('click', abrirModalNovo);
+  document.getElementById('campoBusca').addEventListener('input', filtrar);
+  document.getElementById('btnConfirmarExcluir').addEventListener('click', excluirFornecedor);
+  carregarFornecedores();
+}
+
+// Carregar
+async function carregarFornecedores() {
+  try {
+    const data = await supaGet('fornecedores', 'order=nome');
+    fornecedores = data || [];
+    document.getElementById('kpiTotal').textContent = fornecedores.length;
+    renderTabela(fornecedores);
+  } catch (e) {
+    toast('Erro ao carregar fornecedores', 'erro');
+  }
+}
+
+// Renderizar tabela
+function renderTabela(lista) {
+  const tabela = document.getElementById('tabela');
+  const vazio  = document.getElementById('estadoVazio');
+  const tbody  = document.getElementById('tabelaBody');
+
+  if (!lista.length) {
+    tabela.style.display = 'none';
+    vazio.style.display  = 'block';
+    return;
+  }
+  vazio.style.display  = 'none';
+  tabela.style.display = 'table';
+
+  tbody.innerHTML = lista.map(f => `
+    <tr>
+      <td><strong>${esc(f.nome)}</strong></td>
+      <td>${esc(f.cnpj || '—')}</td>
+      <td>${esc(f.telefone || '—')}</td>
+      <td>${esc(f.cidade || '—')}</td>
+      <td>${esc(f.email || '—')}</td>
+      <td style="text-align:right">
+        <button class="btn btn-secundario btn-sm" onclick="abrirModalEditar('${f.id}')" title="Editar">
+          <i class="ti ti-edit"></i>
+        </button>
+        <button class="btn btn-perigo btn-sm" onclick="confirmarExcluir('${f.id}','${esc(f.nome)}')" title="Excluir" style="margin-left:4px">
+          <i class="ti ti-trash"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// Filtro
+function filtrar() {
+  const q = document.getElementById('campoBusca').value.toLowerCase();
+  renderTabela(fornecedores.filter(f =>
+    (f.nome    || '').toLowerCase().includes(q) ||
+    (f.cnpj    || '').toLowerCase().includes(q) ||
+    (f.cidade  || '').toLowerCase().includes(q)
+  ));
+}
+
+// Abrir modal novo
+function abrirModalNovo() {
+  limparForm();
+  document.getElementById('modalTitulo').textContent = 'Novo fornecedor';
+  abrirModal('modalForm');
+}
+
+// Abrir modal editar
+function abrirModalEditar(id) {
+  const f = fornecedores.find(x => x.id === id);
+  if (!f) return;
+  limparForm();
+  document.getElementById('modalTitulo').textContent = 'Editar fornecedor';
+  document.getElementById('fId').value       = f.id;
+  document.getElementById('fNome').value     = f.nome     || '';
+  document.getElementById('fCnpj').value     = f.cnpj     || '';
+  document.getElementById('fTelefone').value = f.telefone || '';
+  document.getElementById('fEmail').value    = f.email    || '';
+  document.getElementById('fCidade').value   = f.cidade   || '';
+  document.getElementById('fEndereco').value = f.endereco || '';
+  document.getElementById('fObs').value      = f.observacoes || '';
+  abrirModal('modalForm');
+}
+
+function limparForm() {
+  ['fId','fNome','fCnpj','fTelefone','fEmail','fCidade','fEndereco','fObs']
+    .forEach(id => document.getElementById(id).value = '');
+}
+
+// Salvar
+async function salvarFornecedor() {
+  const nome = document.getElementById('fNome').value.trim();
+  if (!nome) { toast('Nome é obrigatório', 'erro'); return; }
+
+  const id = document.getElementById('fId').value;
+  const payload = {
+    nome,
+    cnpj:        document.getElementById('fCnpj').value.trim()     || null,
+    telefone:    document.getElementById('fTelefone').value.trim() || null,
+    email:       document.getElementById('fEmail').value.trim()    || null,
+    cidade:      document.getElementById('fCidade').value.trim()   || null,
+    endereco:    document.getElementById('fEndereco').value.trim() || null,
+    observacoes: document.getElementById('fObs').value.trim()      || null
+  };
+
+  const btn = document.getElementById('btnSalvar');
+  btn.disabled = true;
+
+  try {
+    if (id) {
+      await supaPatch('fornecedores', `id=eq.${id}`, payload);
+      toast('Fornecedor atualizado');
+    } else {
+      await supaPost('fornecedores', payload);
+      toast('Fornecedor cadastrado');
+    }
+    fecharModal('modalForm');
+    await carregarFornecedores();
+  } catch (e) {
+    toast('Erro ao salvar fornecedor', 'erro');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Confirmar exclusão
+function confirmarExcluir(id, nome) {
+  idExcluir = id;
+  document.getElementById('nomeExcluir').textContent = nome;
+  abrirModal('modalExcluir');
+}
+
+// Excluir
+async function excluirFornecedor() {
+  if (!idExcluir) return;
+  try {
+    await supaDelete('fornecedores', `id=eq.${idExcluir}`);
+    toast('Fornecedor excluído');
+    fecharModal('modalExcluir');
+    await carregarFornecedores();
+  } catch (e) {
+    toast('Erro ao excluir fornecedor', 'erro');
+  } finally {
+    idExcluir = null;
+  }
+}
+
+// Escape para evitar XSS
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios — PRYNTIX</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/menu.js"></script>
+</head>
+<body>
+<div id="sidebar"></div>
+<div id="sidebar-overlay"></div>
+<div id="conteudo">
+  <div class="pagina-topo">
+    <button id="btn-menu-mobile"><i class="ti ti-menu-2"></i></button>
+    <div class="logo-mark" style="font-size:16px;">PRYN<span style="color:#3B82F6">TIX</span></div>
+    <div style="width:32px"></div>
+  </div>
+  <div class="pagina">
+    <div class="pagina-header">
+      <div class="pagina-titulo"><i class="ti ti-chart-bar" style="margin-right:8px"></i>Relatórios</div>
+    </div>
+    
+<div class="card" style="text-align:center;padding:48px 24px;">
+  <i class="ti ti-chart-bar" style="font-size:3rem;color:var(--blue);margin-bottom:16px;display:block"></i>
+  <h2 style="font-size:1.1rem;font-weight:500;margin-bottom:8px;">Módulo Relatórios</h2>
+  <p style="color:var(--text-secondary);font-size:13px;">Em desenvolvimento — será entregue na próxima fase.</p>
+</div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script>
+const sessao = verificarSessao();
+document.addEventListener('DOMContentLoaded', () => {
+  renderizarMenu('relatorios.html');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Histórico de Orçamentos — PRYNTIX</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/menu.js"></script>
+  <style>
+    .valor-rosa { color: #E91E8C; font-weight: 600; }
+    .resumo-bar { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+    .res-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+    .res-card.destaque { border-left: 3px solid #3B82F6; }
+    .res-card.verde { border-left: 3px solid var(--verde); }
+    .res-card.amarelo { border-left: 3px solid var(--amarelo); }
+    .res-card.vermelho { border-left: 3px solid var(--vermelho); }
+    .res-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 4px; }
+    .res-valor { font-size: 1.4rem; font-weight: 600; color: var(--text-primary); }
+    .res-card.destaque .res-valor { color: #3B82F6; }
+    .res-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    @media(max-width:768px){ .resumo-bar { grid-template-columns: 1fr 1fr; } }
+    @media(max-width:480px){ .resumo-bar { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div id="sidebar"></div>
+<div id="sidebar-overlay"></div>
+<div id="conteudo">
+  <div class="pagina-topo">
+    <button id="btn-menu-mobile"><i class="ti ti-menu-2"></i></button>
+    <div class="logo-mark" style="font-size:16px;">PRYN<span style="color:#3B82F6">TIX</span></div>
+    <div style="width:32px"></div>
+  </div>
+  <div class="pagina" style="max-width:100%">
+    <div class="pagina-header">
+      <div class="pagina-titulo">Histórico de Orçamentos</div>
+      <a href="orcamentos.html" class="btn btn-primario">
+        <i class="ti ti-plus"></i> Novo orçamento
+      </a>
+    </div>
+
+    <!-- KPIs -->
+    <div class="resumo-bar">
+      <div class="res-card destaque">
+        <div class="res-label">Total orçado</div>
+        <div class="res-valor" id="kpi-total">—</div>
+        <div class="res-sub" id="kpi-total-sub">—</div>
+      </div>
+      <div class="res-card verde">
+        <div class="res-label">Pago / Recebido</div>
+        <div class="res-valor" id="kpi-pago">—</div>
+        <div class="res-sub" id="kpi-pago-sub">—</div>
+      </div>
+      <div class="res-card amarelo">
+        <div class="res-label">Pendente</div>
+        <div class="res-valor" id="kpi-pendente">—</div>
+        <div class="res-sub" id="kpi-pendente-sub">—</div>
+      </div>
+      <div class="res-card vermelho">
+        <div class="res-label">Cancelado</div>
+        <div class="res-valor" id="kpi-cancelado">—</div>
+        <div class="res-sub" id="kpi-cancelado-sub">—</div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="tabela-wrap">
+      <div class="tabela-filtros">
+        <input type="text" class="input-busca" id="filtro-busca" placeholder="🔍 Buscar por cliente, referência ou #número..." oninput="filtrarLista()" style="flex:1;min-width:200px">
+        <select class="select-filtro" id="filtro-status" onchange="filtrarLista()">
+          <option value="">Todos os status</option>
+          <option value="pendente">Pendente</option>
+          <option value="pago">Pago</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <input type="month" class="select-filtro" id="filtro-mes" onchange="filtrarLista()" title="Filtrar por mês">
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Cliente</th>
+            <th>Referência</th>
+            <th>Solicitante</th>
+            <th>Data</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="lista-orcamentos">
+          <tr><td colspan="8"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script>
+const sessao = verificarSessao();
+let orcamentos = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  renderizarMenu('historico.html');
+  await carregarOrcamentos();
+});
+
+async function carregarOrcamentos() {
+  try {
+    orcamentos = await supaGet('orcamentos', 'select=*&order=id.desc');
+    calcularKPIs();
+    renderizarLista(orcamentos);
+  } catch(e) {
+    document.getElementById('lista-orcamentos').innerHTML =
+      '<tr><td colspan="8" style="color:var(--vermelho);padding:20px">Erro ao carregar orçamentos.</td></tr>';
+  }
+}
+
+function calcularKPIs() {
+  const total    = orcamentos.reduce((s,o) => s+(o.total||0), 0);
+  const pagos    = orcamentos.filter(o => o.status==='pago');
+  const pend     = orcamentos.filter(o => o.status==='pendente'||!o.status);
+  const cancel   = orcamentos.filter(o => o.status==='cancelado');
+  const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+
+  document.getElementById('kpi-total').textContent      = fmt(total);
+  document.getElementById('kpi-total-sub').textContent   = orcamentos.length + ' orçamentos';
+  document.getElementById('kpi-pago').textContent        = fmt(pagos.reduce((s,o)=>s+(o.total||0),0));
+  document.getElementById('kpi-pago-sub').textContent    = pagos.length + ' pagos';
+  document.getElementById('kpi-pendente').textContent    = fmt(pend.reduce((s,o)=>s+(o.total||0),0));
+  document.getElementById('kpi-pendente-sub').textContent= pend.length + ' pendentes';
+  document.getElementById('kpi-cancelado').textContent   = fmt(cancel.reduce((s,o)=>s+(o.total||0),0));
+  document.getElementById('kpi-cancelado-sub').textContent=cancel.length + ' cancelados';
+}
+
+function filtrarLista() {
+  const busca  = document.getElementById('filtro-busca').value.toLowerCase();
+  const status = document.getElementById('filtro-status').value;
+  const mes    = document.getElementById('filtro-mes').value;
+  const fil = orcamentos.filter(o => {
+    const mb = !busca || (o.cliente||'').toLowerCase().includes(busca)
+      || (o.referencia||'').toLowerCase().includes(busca)
+      || String(o.id).includes(busca);
+    const ms = !status || o.status === status;
+    const mm = !mes || (o.criado_em||'').startsWith(mes);
+    return mb && ms && mm;
+  });
+  renderizarLista(fil);
+}
+
+function renderizarLista(lista) {
+  const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+  const tbody = document.getElementById('lista-orcamentos');
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="vazio"><i class="ti ti-file-off"></i><p>Nenhum orçamento encontrado.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = lista.map(o => {
+    const st   = o.status || 'pendente';
+    const data = o.criado_em ? new Date(o.criado_em).toLocaleDateString('pt-BR') : '—';
+    const link = 'ver.html?id=' + o.id;
+    return '<tr>'
+      + '<td><strong style="color:var(--blue)">#' + o.id + '</strong></td>'
+      + '<td style="font-weight:500">' + (o.cliente||'—') + '</td>'
+      + '<td style="color:var(--text-muted);font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (o.referencia||'—') + '</td>'
+      + '<td style="font-size:12px">' + (o.solicitante||'—') + '</td>'
+      + '<td style="font-size:12px">' + data + '</td>'
+      + '<td><strong style="color:#E91E8C">' + fmt(o.total) + '</strong></td>'
+      + '<td><button class="badge badge-' + st + '" onclick="ciclarStatus(' + o.id + ',\'' + st + '\')">' + st.toUpperCase() + '</button></td>'
+      + '<td style="display:flex;gap:6px">'
+        + '<a href="orcamentos.html?id=' + o.id + '" class="btn btn-secundario btn-sm"><i class="ti ti-pencil"></i> Editar</a>'
+        + '<a href="' + link + '" target="_blank" class="btn btn-secundario btn-sm"><i class="ti ti-eye"></i></a>'
+        + '<button class="btn btn-secundario btn-sm" onclick="copiarLink(' + o.id + ')"><i class="ti ti-link"></i></button>'
+      + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+const STATUS_CICLO = { pendente:'pago', pago:'cancelado', cancelado:'pendente' };
+async function ciclarStatus(id, atual) {
+  const novo = STATUS_CICLO[atual] || 'pendente';
+  try {
+    await supaPatch('orcamentos','id=eq.'+id,{status:novo});
+    const orc = orcamentos.find(o => o.id===id);
+    if (orc) orc.status = novo;
+    calcularKPIs();
+    filtrarLista();
+    toast('Status: ' + novo, 'sucesso');
+  } catch { toast('Erro ao alterar status.', 'erro'); }
+}
+
+function copiarLink(id) {
+  const link = window.location.origin + '/pryntix/ver.html?id=' + id;
+  navigator.clipboard.writeText(link).then(() => toast('Link copiado!', 'sucesso'));
+}
+</script>
+</body>
+</html>

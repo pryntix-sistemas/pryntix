@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0;url=login.html">
+  <title>PRYNTIX</title>
+</head>
+<body>
+  <script>
+    var s = localStorage.getItem('pryntix_sessao');
+    if (s) { try { var d=JSON.parse(s); if(Date.now()<d.expira){ window.location.href='dashboard.html'; } else { window.location.href='login.html'; } } catch{ window.location.href='login.html'; } }
+    else { window.location.href='login.html'; }
+  </script>
+</body>
+</html>

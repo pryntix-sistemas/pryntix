@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes — PRYNTIX</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/menu.js"></script>
+</head>
+<body>
+<div id="sidebar"></div>
+<div id="sidebar-overlay"></div>
+<div id="conteudo">
+  <div class="pagina-topo">
+    <button id="btn-menu-mobile"><i class="ti ti-menu-2"></i></button>
+    <div class="logo-mark" style="font-size:16px;">PRYN<span style="color:#3B82F6">TIX</span></div>
+    <div style="width:32px"></div>
+  </div>
+  <div class="pagina">
+    <div class="pagina-header">
+      <div class="pagina-titulo"><i class="ti ti-users" style="margin-right:8px"></i>Clientes</div>
+    </div>
+    
+<div class="tabela-wrap">
+  <div class="tabela-filtros">
+    <input type="text" class="input-busca" id="filtro-busca" placeholder="🔍 Buscar cliente..." oninput="filtrarLista()" style="flex:1">
+    <button class="btn btn-primario" onclick="abrirModalNovo()"><i class="ti ti-plus"></i> Novo cliente</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>CNPJ / CPF</th>
+        <th>Telefone</th>
+        <th>Email</th>
+        <th>Cidade</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="lista-clientes">
+      <tr><td colspan="6"><div class="spinner"></div></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal Novo/Editar Cliente -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-titulo" id="modal-titulo">Novo Cliente</div>
+      <button class="modal-fechar" onclick="fecharModal('modal-cliente')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cliente-id">
+      <div class="form-grupo">
+        <label>Nome *</label>
+        <input type="text" id="campo-nome" placeholder="Nome completo ou razão social">
+      </div>
+      <div class="form-linha form-2">
+        <div class="form-grupo">
+          <label>CNPJ / CPF</label>
+          <input type="text" id="campo-cnpj" placeholder="00.000.000/0001-00">
+        </div>
+        <div class="form-grupo">
+          <label>Telefone</label>
+          <input type="text" id="campo-telefone" placeholder="(21) 99999-9999">
+        </div>
+      </div>
+      <div class="form-linha form-2">
+        <div class="form-grupo">
+          <label>Email</label>
+          <input type="email" id="campo-email" placeholder="email@empresa.com">
+        </div>
+        <div class="form-grupo">
+          <label>Cidade</label>
+          <input type="text" id="campo-cidade" placeholder="Cidade — UF">
+        </div>
+      </div>
+      <div class="form-grupo">
+        <label>Endereço</label>
+        <input type="text" id="campo-endereco" placeholder="Rua, número, bairro">
+      </div>
+      <div class="form-grupo">
+        <label>Observações</label>
+        <textarea id="campo-obs" rows="2" placeholder="Anotações sobre o cliente..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secundario" onclick="fecharModal('modal-cliente')">Cancelar</button>
+      <button class="btn btn-primario" onclick="salvarCliente()"><i class="ti ti-device-floppy"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let clientes = [];
+let excluindoId = null;
+
+async function carregarClientes() {
+  try {
+    clientes = await supaGet("clientes", "select=*&order=nome");
+    renderizarLista(clientes);
+  } catch(e) {
+    document.getElementById("lista-clientes").innerHTML = "<tr><td colspan=\"6\" style=\"color:var(--vermelho);padding:20px\">Erro ao carregar clientes.</td></tr>";
+  }
+}
+
+function filtrarLista() {
+  const busca = document.getElementById("filtro-busca").value.toLowerCase();
+  const fil = clientes.filter(c => (c.nome||"").toLowerCase().includes(busca) || (c.cnpj||"").includes(busca));
+  renderizarLista(fil);
+}
+
+function renderizarLista(lista) {
+  const tbody = document.getElementById("lista-clientes");
+  if (!lista.length) {
+    tbody.innerHTML = "<tr><td colspan=\"6\"><div class=\"vazio\"><i class=\"ti ti-users\"></i><p>Nenhum cliente cadastrado.</p></div></td></tr>";
+    return;
+  }
+  tbody.innerHTML = lista.map(c => `
+    <tr>
+      <td><strong>${c.nome}</strong></td>
+      <td>${c.cnpj||"—"}</td>
+      <td>${c.telefone||"—"}</td>
+      <td>${c.email||"—"}</td>
+      <td>${c.cidade||"—"}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-secundario btn-sm" onclick="editarCliente(${c.id})"><i class="ti ti-pencil"></i></button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function abrirModalNovo() {
+  document.getElementById("modal-titulo").textContent = "Novo Cliente";
+  document.getElementById("cliente-id").value = "";
+  document.getElementById("campo-nome").value = "";
+  document.getElementById("campo-cnpj").value = "";
+  document.getElementById("campo-telefone").value = "";
+  document.getElementById("campo-email").value = "";
+  document.getElementById("campo-cidade").value = "";
+  document.getElementById("campo-endereco").value = "";
+  document.getElementById("campo-obs").value = "";
+  abrirModal("modal-cliente");
+}
+
+function editarCliente(id) {
+  const c = clientes.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById("modal-titulo").textContent = "Editar Cliente";
+  document.getElementById("cliente-id").value = c.id;
+  document.getElementById("campo-nome").value = c.nome||"";
+  document.getElementById("campo-cnpj").value = c.cnpj||"";
+  document.getElementById("campo-telefone").value = c.telefone||"";
+  document.getElementById("campo-email").value = c.email||"";
+  document.getElementById("campo-cidade").value = c.cidade||"";
+  document.getElementById("campo-endereco").value = c.endereco||"";
+  document.getElementById("campo-obs").value = c.observacoes||"";
+  abrirModal("modal-cliente");
+}
+
+async function salvarCliente() {
+  const nome = document.getElementById("campo-nome").value.trim();
+  if (!nome) { toast("Informe o nome.", "erro"); return; }
+  const dados = {
+    nome,
+    cnpj:        document.getElementById("campo-cnpj").value.trim(),
+    telefone:    document.getElementById("campo-telefone").value.trim(),
+    email:       document.getElementById("campo-email").value.trim(),
+    cidade:      document.getElementById("campo-cidade").value.trim(),
+    endereco:    document.getElementById("campo-endereco").value.trim(),
+    observacoes: document.getElementById("campo-obs").value.trim()
+  };
+  const id = document.getElementById("cliente-id").value;
+  try {
+    if (id) {
+      await supaPatch("clientes", "id=eq."+id, dados);
+      toast("Cliente atualizado!", "sucesso");
+    } else {
+      await supaPost("clientes", dados);
+      toast("Cliente cadastrado!", "sucesso");
+    }
+    fecharModal("modal-cliente");
+    await carregarClientes();
+  } catch(e) { toast("Erro ao salvar: "+e.message, "erro"); }
+}
+
+carregarClientes();
+</script>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script>
+const sessao = verificarSessao();
+document.addEventListener('DOMContentLoaded', () => {
+  renderizarMenu('clientes.html');
+});
+</script>
+</body>
+</html>
