@@ -207,10 +207,10 @@ function renderTabela(lista) {
       <td>${esc(f.cidade || '—')}</td>
       <td>${esc(f.email || '—')}</td>
       <td style="text-align:right">
-        <button class="btn btn-secundario btn-sm" onclick="abrirModalEditar('${f.id}')" title="Editar">
+        <button class="btn btn-secundario btn-sm" onclick="abrirModalEditar(decodeURIComponent('${codificarArgumento(f.id)}'))" title="Editar">
           <i class="ti ti-edit"></i>
         </button>
-        <button class="btn btn-perigo btn-sm" onclick="confirmarExcluir('${f.id}','${esc(f.nome)}')" title="Excluir" style="margin-left:4px">
+        <button class="btn btn-perigo btn-sm" onclick="confirmarExcluir(decodeURIComponent('${codificarArgumento(f.id)}'),decodeURIComponent('${codificarArgumento(f.nome)}'))" title="Excluir" style="margin-left:4px">
           <i class="ti ti-trash"></i>
         </button>
       </td>
@@ -237,7 +237,7 @@ function abrirModalNovo() {
 
 // Abrir modal editar
 function abrirModalEditar(id) {
-  const f = fornecedores.find(x => x.id === id);
+  const f = fornecedores.find(x => String(x.id) === String(id));
   if (!f) return;
   limparForm();
   document.getElementById('modalTitulo').textContent = 'Editar fornecedor';

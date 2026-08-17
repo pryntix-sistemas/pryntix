@@ -1,0 +1,37 @@
+# Alterações da v2.0 — Homologação
+
+- Corrigidos os links de orçamento enviados pelo WhatsApp para usar o site público, mesmo quando o sistema é aberto pelo computador.
+- Substituídos os marcadores especiais dos itens por caracteres compatíveis com todas as versões do WhatsApp.
+- Simplificado o fluxo de criação: o formulário abre diretamente e o Dashboard exibe um único botão principal.
+- Corrigidos os atalhos de orçamento do Dashboard, que levavam indevidamente para a tela inicial.
+- Corrigido o estouro horizontal do Dashboard e do formulário de orçamento no celular.
+- Reorganizados quantidade, valor unitário e total dos itens para preenchimento no celular.
+- Corrigidas datas que podiam avançar um dia por causa do fuso horário.
+- Adicionados atalhos de primeira ação nos estados vazios.
+- Identificados Estoque e Relatórios como módulos "Em breve" no menu.
+- Atualizado o cache do aplicativo para distribuir as correções.
+- Preservado o formulário completo de orçamentos, WhatsApp e PDF.
+- Corrigida a página pública de orçamento e adotado token público seguro.
+- Melhorada a quebra de texto do cliente e referência no PDF.
+- Adicionada renovação automática de sessão.
+- Corrigidos cache e escopo do PWA para GitHub Pages.
+- Corrigido filtro de meses sem dia 31.
+- Adicionados parcelamento e dois anexos em Contas a Pagar.
+- Adicionados filtros por fornecedor.
+- Criadas Contas a Receber e baixa parcial com histórico de recebimentos.
+- Adicionado módulo inicial de Configurações.
+- Separadas as marcas: PRYNTIX como plataforma e Printer & Co. como empresa emissora.
+- Adicionados nome, logo, CNPJ e contatos da empresa no orçamento, PDF, WhatsApp e página pública.
+- Adicionada troca de logo nas Configurações da empresa.
+- Adicionada exclusão de clientes com confirmação.
+- Corrigidos tratamentos de texto em pontos críticos da interface.
+- Removido o redirecionamento automático após salvar, mantendo WhatsApp e PDF disponíveis.
+- Bloqueado o botão durante o salvamento para evitar orçamentos duplicados.
+- Corrigida a geração e a cópia do link público também no modo de teste local.
+- Reforçadas as validações de itens e desconto do orçamento.
+- Corrigidos nomes com apóstrofo nos cadastros e seletores.
+- Ajustado o layout da tela de Configurações no desktop e no celular.
+- Adicionada numeração automática e única no padrão ORC-000001.
+- Adicionado o fluxo “Salvar e criar outro”, que limpa a tela para o próximo orçamento.
+- Exibido o número do orçamento na tela, histórico, dashboard, PDF, WhatsApp e página pública.
+- Adicionado reset seguro dos dados de teste com reinício da numeração, preservando usuários e configurações.

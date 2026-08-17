@@ -83,7 +83,7 @@
       <table>
         <thead>
           <tr>
-            <th>#</th>
+            <th>Nº do orçamento</th>
             <th>Cliente</th>
             <th>Referência</th>
             <th>Solicitante</th>
@@ -157,24 +157,24 @@ function renderizarLista(lista) {
   const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
   const tbody = document.getElementById('lista-orcamentos');
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="8"><div class="vazio"><i class="ti ti-file-off"></i><p>Nenhum orçamento encontrado.</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8"><div class="vazio"><i class="ti ti-file-off"></i><p>Nenhum orçamento encontrado.</p><a class="btn btn-primario btn-sm vazio-acao" href="orcamentos.html"><i class="ti ti-plus"></i>Criar primeiro orçamento</a></div></td></tr>';
     return;
   }
   tbody.innerHTML = lista.map(o => {
     const st   = o.status || 'pendente';
     const data = o.criado_em ? new Date(o.criado_em).toLocaleDateString('pt-BR') : '—';
-    const link = 'ver.html?id=' + o.id;
+    const link = o.public_token ? urlOrcamentoPublico(o.public_token) : '#';
     return '<tr>'
-      + '<td><strong style="color:var(--blue)">#' + o.id + '</strong></td>'
-      + '<td style="font-weight:500">' + (o.cliente||'—') + '</td>'
-      + '<td style="color:var(--text-muted);font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (o.referencia||'—') + '</td>'
-      + '<td style="font-size:12px">' + (o.solicitante||'—') + '</td>'
+      + '<td><strong style="color:var(--blue)">' + numeroOrcamento(o.id) + '</strong></td>'
+      + '<td style="font-weight:500">' + escHtml(o.cliente||'—') + '</td>'
+      + '<td style="color:var(--text-muted);font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(o.referencia||'—') + '</td>'
+      + '<td style="font-size:12px">' + escHtml(o.solicitante||'—') + '</td>'
       + '<td style="font-size:12px">' + data + '</td>'
       + '<td><strong style="color:#E91E8C">' + fmt(o.total) + '</strong></td>'
       + '<td><button class="badge badge-' + st + '" onclick="ciclarStatus(' + o.id + ',\'' + st + '\')">' + st.toUpperCase() + '</button></td>'
       + '<td style="display:flex;gap:6px">'
         + '<a href="orcamentos.html?id=' + o.id + '" class="btn btn-secundario btn-sm"><i class="ti ti-pencil"></i> Editar</a>'
-        + '<a href="' + link + '" target="_blank" class="btn btn-secundario btn-sm"><i class="ti ti-eye"></i></a>'
+        + '<a href="' + link + '" target="_blank" class="btn btn-secundario btn-sm" title="Visualizar"><i class="ti ti-eye"></i></a>'
         + '<button class="btn btn-secundario btn-sm" onclick="copiarLink(' + o.id + ')"><i class="ti ti-link"></i></button>'
       + '</td>'
       + '</tr>';
@@ -195,8 +195,10 @@ async function ciclarStatus(id, atual) {
 }
 
 function copiarLink(id) {
-  const link = window.location.origin + '/pryntix/ver.html?id=' + id;
-  navigator.clipboard.writeText(link).then(() => toast('Link copiado!', 'sucesso'));
+  const orc = orcamentos.find(o => String(o.id) === String(id));
+  if (!orc?.public_token) { toast('Execute a migração v2 para gerar o link público seguro.','aviso'); return; }
+  const link = urlOrcamentoPublico(orc.public_token);
+  copiarTexto(link).then(ok => toast(ok ? 'Link copiado!' : 'Não foi possível copiar o link.', ok ? 'sucesso' : 'erro'));
 }
 </script>
 </body>
