@@ -117,6 +117,18 @@ a { text-decoration: none; }
 }
 
 .nav-item i { font-size: 16px; }
+.nav-item-label { min-width: 0; }
+.nav-badge {
+  margin-left: auto;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(148,163,184,0.14);
+  color: rgba(255,255,255,0.55);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
 
 .sidebar-footer {
   padding: 14px 20px;
@@ -176,9 +188,11 @@ a { text-decoration: none; }
 /* ============================================================
    CONTEÚDO
    ============================================================ */
-#conteudo {
+#conteudo, #conteudo-principal {
   margin-left: var(--sidebar-w);
   flex: 1;
+  min-width: 0;
+  width: calc(100% - var(--sidebar-w));
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -563,6 +577,8 @@ tbody td {
 
 .vazio i { font-size: 2.5rem; margin-bottom: 10px; display: block; opacity: 0.4; }
 .vazio p { font-size: 13px; }
+.vazio small { display: block; margin-top: 6px; font-size: 11px; color: var(--text-muted); }
+.vazio-acao { margin-top: 16px; }
 
 /* ============================================================
    LOADING
@@ -611,11 +627,16 @@ tbody td {
    RESPONSIVO
    ============================================================ */
 @media (max-width: 768px) {
+  body { width: 100%; overflow-x: hidden; }
   #sidebar { transform: translateX(-100%); }
   #sidebar.aberto { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,0.3); }
-  #conteudo { margin-left: 0; }
+  #conteudo, #conteudo-principal { margin-left: 0; width: 100%; min-width: 0; overflow-x: hidden; }
   .pagina-topo { display: flex; }
-  .pagina { padding: 16px; }
+  .pagina { padding: 16px; min-width: 0; overflow-x: hidden; }
+  .pagina-header { align-items: flex-start; flex-wrap: wrap; }
+  .pagina-header > .btn { width: 100%; justify-content: center; }
+  .tabela-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tabela-filtros > input, .tabela-filtros > select, .tabela-filtros > .btn { width: 100%; min-width: 0; margin-left: 0 !important; }
   .form-2, .form-3 { grid-template-columns: 1fr; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
 }

@@ -140,7 +140,7 @@
 
     <button class="btn-entrar" id="btn-entrar" onclick="entrar()">Entrar</button>
     <div class="erro" id="erro-msg"></div>
-    <div class="versao">PRYNTIX v1.0 · Printer & Co.</div>
+    <div class="versao">PRYNTIX v2.0 Homologação · Printer & Co.</div>
   </div>
 
   <script>
@@ -198,7 +198,7 @@
           usuario: dados.user.email,
           nome:    dados.user.user_metadata?.nome || usuario,
           perfil:  dados.user.user_metadata?.perfil || 'usuario',
-          expira:  Date.now() + SESSAO_DUR
+          expira:  Date.now() + ((dados.expires_in || 3600) * 1000)
         };
         localStorage.setItem(SESSAO_KEY, JSON.stringify(sessao));
         window.location.href = 'dashboard.html';

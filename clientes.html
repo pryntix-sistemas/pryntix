@@ -119,18 +119,19 @@ function filtrarLista() {
 function renderizarLista(lista) {
   const tbody = document.getElementById("lista-clientes");
   if (!lista.length) {
-    tbody.innerHTML = "<tr><td colspan=\"6\"><div class=\"vazio\"><i class=\"ti ti-users\"></i><p>Nenhum cliente cadastrado.</p></div></td></tr>";
+    tbody.innerHTML = "<tr><td colspan=\"6\"><div class=\"vazio\"><i class=\"ti ti-users\"></i><p>Nenhum cliente cadastrado.</p><button class=\"btn btn-primario btn-sm vazio-acao\" onclick=\"abrirModalNovo()\"><i class=\"ti ti-plus\"></i>Cadastrar primeiro cliente</button></div></td></tr>";
     return;
   }
   tbody.innerHTML = lista.map(c => `
     <tr>
-      <td><strong>${c.nome}</strong></td>
-      <td>${c.cnpj||"—"}</td>
-      <td>${c.telefone||"—"}</td>
-      <td>${c.email||"—"}</td>
-      <td>${c.cidade||"—"}</td>
+      <td><strong>${escHtml(c.nome)}</strong></td>
+      <td>${escHtml(c.cnpj||"—")}</td>
+      <td>${escHtml(c.telefone||"—")}</td>
+      <td>${escHtml(c.email||"—")}</td>
+      <td>${escHtml(c.cidade||"—")}</td>
       <td style="display:flex;gap:6px">
-        <button class="btn btn-secundario btn-sm" onclick="editarCliente(${c.id})"><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-secundario btn-sm" onclick="editarCliente(decodeURIComponent('${codificarArgumento(c.id)}'))" title="Editar"><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-perigo btn-sm" onclick="excluirCliente(decodeURIComponent('${codificarArgumento(c.id)}'),decodeURIComponent('${codificarArgumento(c.nome)}'))" title="Excluir"><i class="ti ti-trash"></i></button>
       </td>
     </tr>
   `).join("");
@@ -150,7 +151,7 @@ function abrirModalNovo() {
 }
 
 function editarCliente(id) {
-  const c = clientes.find(x => x.id === id);
+  const c = clientes.find(x => String(x.id) === String(id));
   if (!c) return;
   document.getElementById("modal-titulo").textContent = "Editar Cliente";
   document.getElementById("cliente-id").value = c.id;
@@ -188,6 +189,15 @@ async function salvarCliente() {
     fecharModal("modal-cliente");
     await carregarClientes();
   } catch(e) { toast("Erro ao salvar: "+e.message, "erro"); }
+}
+
+async function excluirCliente(id, nome) {
+  if (!window.confirm(`Excluir o cliente "${nome}"? Esta ação não pode ser desfeita.`)) return;
+  try {
+    await supaDelete('clientes', `id=eq.${encodeURIComponent(id)}`);
+    toast('Cliente excluído!', 'sucesso');
+    await carregarClientes();
+  } catch(e) { toast('Não foi possível excluir o cliente.', 'erro'); }
 }
 
 carregarClientes();

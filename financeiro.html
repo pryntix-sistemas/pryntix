@@ -171,6 +171,9 @@
             <option value="vencido">Vencido</option>
             <option value="pago">Pago</option>
           </select>
+          <select class="select-filtro" id="filtro-fornecedor" onchange="aplicarFiltros()">
+            <option value="">Todos os fornecedores</option>
+          </select>
           <button class="btn btn-primario" style="margin-left:auto" onclick="abrirModalNovo()">
             <i class="ti ti-plus"></i>Novo lançamento
           </button>
@@ -180,6 +183,7 @@
         <div class="vazio" id="estado-vazio" style="display:none">
           <i class="ti ti-file-invoice"></i>
           <p>Nenhum lançamento encontrado.</p>
+          <button class="btn btn-primario btn-sm vazio-acao" onclick="abrirModalNovo()"><i class="ti ti-plus"></i>Criar primeira conta a pagar</button>
         </div>
 
         <!-- Tabela -->
@@ -200,11 +204,24 @@
       </div>
     </div>
 
-    <!-- CONTAS A RECEBER (placeholder) -->
+    <!-- CONTAS A RECEBER -->
     <div id="secao-receber" style="display:none">
-      <div class="vazio" style="padding:64px 24px">
-        <i class="ti ti-arrow-down-circle"></i>
-        <p>Contas a receber — em desenvolvimento.</p>
+      <div class="kpi-grid">
+        <div class="kpi-card destaque"><div class="kpi-label">Total</div><div class="kpi-valor" id="rec-kpi-total">—</div></div>
+        <div class="kpi-card amarelo"><div class="kpi-label">Saldo em aberto</div><div class="kpi-valor" id="rec-kpi-aberto">—</div></div>
+        <div class="kpi-card vermelho"><div class="kpi-label">Vencido</div><div class="kpi-valor" id="rec-kpi-vencido">—</div></div>
+        <div class="kpi-card verde"><div class="kpi-label">Recebido</div><div class="kpi-valor" id="rec-kpi-recebido">—</div></div>
+      </div>
+      <div class="tabela-wrap">
+        <div class="tabela-filtros">
+          <select class="select-filtro" id="rec-filtro-cliente" onchange="filtrarReceber()"><option value="">Todos os clientes</option></select>
+          <select class="select-filtro" id="rec-filtro-situacao" onchange="filtrarReceber()"><option value="">Todas as situações</option><option value="pendente">Em aberto</option><option value="parcial">Parcial</option><option value="vencido">Vencido</option><option value="recebido">Recebido</option></select>
+          <input type="date" class="select-filtro" id="rec-data-inicio" onchange="filtrarReceber()">
+          <input type="date" class="select-filtro" id="rec-data-fim" onchange="filtrarReceber()">
+          <button class="btn btn-primario" style="margin-left:auto" onclick="abrirNovaReceber()"><i class="ti ti-plus"></i>Novo lançamento</button>
+        </div>
+        <div class="vazio" id="rec-vazio" style="display:none"><i class="ti ti-cash-off"></i><p>Nenhuma conta encontrada.</p><button class="btn btn-primario btn-sm vazio-acao" onclick="abrirNovaReceber()"><i class="ti ti-plus"></i>Criar primeira conta a receber</button></div>
+        <table id="rec-tabela" style="display:none"><thead><tr><th>Cliente</th><th>Referência</th><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Recebido</th><th>Saldo</th><th>Situação</th><th></th></tr></thead><tbody id="rec-tbody"></tbody></table>
       </div>
     </div>
   </div>
@@ -263,6 +280,11 @@
       </div>
 
       <div class="form-linha form-2">
+        <div class="form-grupo"><label>Número da NF/documento</label><input type="text" id="l-numero-documento"></div>
+        <div class="form-grupo"><label>Quantidade de parcelas</label><input type="number" id="l-parcelas" value="1" min="1" max="60"></div>
+      </div>
+
+      <div class="form-linha form-2">
         <div class="form-grupo">
           <label>Data de vencimento *</label>
           <input type="date" id="l-vencimento">
@@ -290,6 +312,12 @@
           <a id="doc-atual-link" href="#" target="_blank" style="color:var(--blue)">visualizar</a>
           · <span style="cursor:pointer;color:var(--vermelho-text)" onclick="removerDocAtual()">remover</span>
         </div>
+      </div>
+      <div class="form-grupo">
+        <label>Comprovante de pagamento</label>
+        <input type="file" id="l-comprovante" accept=".pdf,.png,.jpg,.jpeg">
+        <input type="hidden" id="l-comprovante-atual">
+        <small style="color:var(--text-secondary)">O comprovante fica associado a esta parcela.</small>
       </div>
     </div>
     <div class="modal-footer">
@@ -354,6 +382,35 @@
   </div>
 </div>
 
+<!-- MODAL CONTAS A RECEBER -->
+<div class="modal-overlay" id="modal-receber">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header"><div class="modal-titulo">Nova conta a receber</div><button class="modal-fechar" onclick="fecharModal('modal-receber')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-linha form-2"><div class="form-grupo" style="grid-column:1/-1"><label>Cliente *</label><select id="rec-cliente"><option value="">Selecione...</option></select></div></div>
+      <div class="form-linha form-2"><div class="form-grupo"><label>Valor total *</label><input id="rec-valor" placeholder="0,00"></div><div class="form-grupo"><label>Forma *</label><select id="rec-forma"><option value="pix">PIX</option><option value="boleto">Boleto</option><option value="transferencia">Transferência</option><option value="dinheiro">Dinheiro</option><option value="cartao">Cartão</option></select></div></div>
+      <div class="form-linha form-2"><div class="form-grupo"><label>Emissão</label><input type="date" id="rec-emissao"></div><div class="form-grupo"><label>Primeiro vencimento *</label><input type="date" id="rec-vencimento"></div></div>
+      <div class="form-linha form-2"><div class="form-grupo"><label>Parcelas</label><input type="number" id="rec-parcelas" min="1" max="60" value="1"></div><div class="form-grupo"><label>Referência</label><input id="rec-referencia"></div></div>
+      <div class="form-grupo"><label>Observações</label><textarea id="rec-observacoes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secundario" onclick="fecharModal('modal-receber')">Cancelar</button><button class="btn btn-primario" id="rec-btn-salvar" onclick="salvarContaReceber()"><i class="ti ti-check"></i>Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL RECEBIMENTO PARCIAL -->
+<div class="modal-overlay" id="modal-recebimento">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><div class="modal-titulo">Registrar recebimento</div><button class="modal-fechar" onclick="fecharModal('modal-recebimento')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="pg-conta-id"><div id="pg-resumo" style="padding:12px;background:var(--bg);border-radius:8px;margin-bottom:14px"></div>
+      <div class="form-linha form-2"><div class="form-grupo"><label>Valor recebido *</label><input id="pg-valor" placeholder="0,00"></div><div class="form-grupo"><label>Data *</label><input type="date" id="pg-data"></div></div>
+      <div class="form-linha form-2"><div class="form-grupo"><label>Forma *</label><select id="pg-forma"><option value="pix">PIX</option><option value="boleto">Boleto</option><option value="transferencia">Transferência</option><option value="dinheiro">Dinheiro</option><option value="cartao">Cartão</option></select></div><div class="form-grupo"><label>Comprovante</label><input type="file" id="pg-comprovante" accept=".pdf,.png,.jpg,.jpeg"></div></div>
+      <div class="form-grupo"><label>Observações</label><input id="pg-observacoes"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secundario" onclick="fecharModal('modal-recebimento')">Cancelar</button><button class="btn btn-primario" onclick="salvarRecebimento()">Registrar</button></div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script>
@@ -362,6 +419,9 @@
 // ============================================================
 let contas = [];
 let fornecedores = [];
+let clientesFinanceiro = [];
+let contasReceber = [];
+let recebimentos = [];
 let idExcluir = null;
 
 const TIPOS = {
@@ -386,7 +446,7 @@ async function init() {
 
   document.getElementById('btn-confirmar-excluir').addEventListener('click', excluirLancamento);
 
-  await Promise.all([carregarFornecedores(), carregarContas()]);
+  await Promise.all([carregarFornecedores(), carregarClientesFinanceiro(), carregarContas(), carregarContasReceber()]);
 }
 
 // ============================================================
@@ -397,6 +457,7 @@ function trocarAba(aba) {
   document.getElementById('secao-receber').style.display = aba === 'receber' ? 'block' : 'none';
   document.getElementById('aba-pagar').classList.toggle('ativa',   aba === 'pagar');
   document.getElementById('aba-receber').classList.toggle('ativa', aba === 'receber');
+  if (aba === 'receber') carregarContasReceber();
 }
 
 // ============================================================
@@ -410,6 +471,7 @@ async function carregarFornecedores() {
     fornecedores.forEach(f => {
       sel.innerHTML += `<option value="${f.id}" data-nome="${esc(f.nome)}">${esc(f.nome)}</option>`;
     });
+    document.getElementById('filtro-fornecedor').innerHTML = '<option value="">Todos os fornecedores</option>' + fornecedores.map(f => `<option value="${esc(f.id)}">${esc(f.nome)}</option>`).join('');
   } catch(e) {
     toast('Erro ao carregar fornecedores', 'erro');
   }
@@ -423,8 +485,10 @@ async function carregarContas() {
   let filtros = 'order=data_vencimento';
   if (mes) {
     const inicio = mes + '-01';
-    const fim    = mes + '-31';
-    filtros += `&data_vencimento=gte.${inicio}&data_vencimento=lte.${fim}`;
+    const [ano, numeroMes] = mes.split('-').map(Number);
+    const proximo = new Date(ano, numeroMes, 1);
+    const fim = `${proximo.getFullYear()}-${String(proximo.getMonth()+1).padStart(2,'0')}-01`;
+    filtros += `&data_vencimento=gte.${inicio}&data_vencimento=lt.${fim}`;
   }
   try {
     contas = await supaGet('contas_pagar', filtros);
@@ -462,9 +526,11 @@ function calcularKpis() {
 function aplicarFiltros() {
   const tipo     = document.getElementById('filtro-tipo').value;
   const situacao = document.getElementById('filtro-situacao').value;
+  const fornecedor = document.getElementById('filtro-fornecedor').value;
   let lista = contas;
   if (tipo)     lista = lista.filter(c => c.tipo_despesa === tipo);
   if (situacao) lista = lista.filter(c => c.situacao    === situacao);
+  if (fornecedor) lista = lista.filter(c => String(c.fornecedor_id) === String(fornecedor));
   renderTabela(lista);
 }
 
@@ -488,12 +554,13 @@ function renderTabela(lista) {
     const badgeClass = `badge badge-${c.situacao}`;
     const tipoLabel = TIPOS[c.tipo_despesa] || c.tipo_despesa || '—';
     const temDoc = c.documento_url ? true : false;
+    const parcela = `${c.parcela_num || 1}/${c.parcelas_total || 1}`;
 
     return `<tr>
       <td>
-        <span class="link-fornecedor" onclick="abrirHistorico('${esc(c.fornecedor_id)}','${esc(c.fornecedor_nome)}')"
+        <span class="link-fornecedor" onclick="abrirHistorico(decodeURIComponent('${codificarArgumento(c.fornecedor_id)}'),decodeURIComponent('${codificarArgumento(c.fornecedor_nome)}'))"
           style="color:var(--blue);cursor:pointer;font-weight:500">
-          ${esc(c.fornecedor_nome || '—')}
+          ${esc(c.fornecedor_nome || '—')} <small style="color:var(--text-secondary)">· ${parcela}</small>
           <i class="ti ti-chevron-right" style="font-size:11px"></i>
         </span>
       </td>
@@ -507,7 +574,8 @@ function renderTabela(lista) {
         </span>
       </td>
       <td style="text-align:right;white-space:nowrap">
-        ${temDoc ? `<button class="btn btn-secundario btn-sm" onclick="baixarDoc('${esc(c.documento_url)}')" title="Baixar documento"><i class="ti ti-file-download"></i></button>` : ''}
+        ${temDoc ? `<button class="btn btn-secundario btn-sm" onclick="baixarDoc('${esc(c.documento_url)}')" title="Documento"><i class="ti ti-file-download"></i></button>` : ''}
+        ${c.comprovante_url ? `<button class="btn btn-secundario btn-sm" onclick="baixarDoc('${esc(c.comprovante_url)}')" title="Comprovante"><i class="ti ti-receipt"></i></button>` : ''}
         <button class="btn btn-secundario btn-sm" onclick="abrirModalEditar('${c.id}')" title="Editar" style="margin-left:4px"><i class="ti ti-edit"></i></button>
         <button class="btn btn-perigo btn-sm" onclick="confirmarExcluir('${c.id}')" title="Excluir" style="margin-left:4px"><i class="ti ti-trash"></i></button>
       </td>
@@ -519,7 +587,7 @@ function renderTabela(lista) {
 // Alterar situação direto na tabela
 // ============================================================
 async function alterarSituacao(id, el) {
-  const conta = contas.find(c => c.id === id);
+  const conta = contas.find(c => String(c.id) === String(id));
   if (!conta) return;
   const proxima = conta.situacao === 'pago' ? 'pendente' : 'pago';
   try {
@@ -538,7 +606,7 @@ function abrirModalNovo() {
   limparFormLancamento();
   document.getElementById('modal-titulo').textContent = 'Novo lançamento';
   // Data de emissão = hoje
-  document.getElementById('l-emissao').value = new Date().toISOString().split('T')[0];
+  document.getElementById('l-emissao').value = dataISOLocal();
   abrirModal('modal-lancamento');
 }
 
@@ -546,7 +614,7 @@ function abrirModalNovo() {
 // Modal editar
 // ============================================================
 async function abrirModalEditar(id) {
-  const c = contas.find(x => x.id === id);
+  const c = contas.find(x => String(x.id) === String(id));
   if (!c) return;
   limparFormLancamento();
   document.getElementById('modal-titulo').textContent = 'Editar lançamento';
@@ -558,6 +626,10 @@ async function abrirModalEditar(id) {
   document.getElementById('l-emissao').value    = c.data_emissao   || '';
   document.getElementById('l-vencimento').value = c.data_vencimento || '';
   document.getElementById('l-obs').value        = c.observacoes    || '';
+  document.getElementById('l-numero-documento').value = c.numero_documento || '';
+  document.getElementById('l-parcelas').value = c.parcelas_total || 1;
+  document.getElementById('l-parcelas').disabled = true;
+  document.getElementById('l-comprovante-atual').value = c.comprovante_url || '';
 
   // Documento já existente
   if (c.documento_url) {
@@ -581,6 +653,11 @@ function limparFormLancamento() {
   document.getElementById('l-valor').value      = '';
   document.getElementById('l-emissao').value    = '';
   document.getElementById('l-vencimento').value = '';
+  document.getElementById('l-numero-documento').value = '';
+  document.getElementById('l-parcelas').value = '1';
+  document.getElementById('l-parcelas').disabled = false;
+  document.getElementById('l-comprovante').value = '';
+  document.getElementById('l-comprovante-atual').value = '';
   document.getElementById('l-doc-url-atual').value = '';
   document.getElementById('l-arquivo').value   = '';
   document.getElementById('arquivo-info').style.display   = 'none';
@@ -672,12 +749,13 @@ async function excluirDocStorage(caminho) {
 async function salvarLancamento() {
   const fornecedorId = document.getElementById('l-fornecedor').value;
   const tipo         = document.getElementById('l-tipo').value;
-  const valorStr     = document.getElementById('l-valor').value.trim().replace(',','.');
+  const valorTotal   = parseMoedaBR(document.getElementById('l-valor').value);
   const vencimento   = document.getElementById('l-vencimento').value;
+  const qtdParcelas  = Math.max(1, parseInt(document.getElementById('l-parcelas').value, 10) || 1);
 
   if (!fornecedorId) { toast('Selecione o fornecedor', 'erro'); return; }
   if (!tipo)         { toast('Selecione o tipo de despesa', 'erro'); return; }
-  if (!valorStr || isNaN(parseFloat(valorStr))) { toast('Informe o valor', 'erro'); return; }
+  if (!Number.isFinite(valorTotal) || valorTotal <= 0) { toast('Informe um valor válido', 'erro'); return; }
   if (!vencimento)   { toast('Informe a data de vencimento', 'erro'); return; }
 
   const fornOpt = document.getElementById('l-fornecedor').selectedOptions[0];
@@ -691,28 +769,33 @@ async function salvarLancamento() {
     const id        = document.getElementById('l-id').value;
     const docAtual  = document.getElementById('l-doc-url-atual').value;
     const arquivo   = document.getElementById('l-arquivo').files[0];
+    const comprovanteArquivo = document.getElementById('l-comprovante').files[0];
+    const comprovanteAtual = document.getElementById('l-comprovante-atual').value;
     let docUrl      = docAtual || null;
+    let comprovanteUrl = comprovanteAtual || null;
 
     // Upload de novo arquivo
     if (arquivo) {
-      if (docAtual) await excluirDocStorage(docAtual); // remove antigo
       docUrl = await fazerUpload(arquivo, fornNome);
     } else if (!docAtual && id) {
       // Usuário removeu o doc existente
-      const contaAtual = contas.find(c => c.id === id);
+      const contaAtual = contas.find(c => String(c.id) === String(id));
       if (contaAtual?.documento_url) await excluirDocStorage(contaAtual.documento_url);
       docUrl = null;
     }
+    if (comprovanteArquivo) comprovanteUrl = await fazerUpload(comprovanteArquivo, fornNome);
 
     const payload = {
       fornecedor_id:   fornecedorId,
       fornecedor_nome: fornNome,
       tipo_despesa:    tipo,
-      valor:           parseFloat(valorStr),
+      valor:           valorTotal,
       situacao:        document.getElementById('l-situacao').value,
       data_emissao:    document.getElementById('l-emissao').value    || null,
       data_vencimento: vencimento,
       documento_url:   docUrl,
+      comprovante_url: comprovanteUrl,
+      numero_documento: document.getElementById('l-numero-documento').value.trim() || null,
       observacoes:     document.getElementById('l-obs').value.trim() || null
     };
 
@@ -720,8 +803,19 @@ async function salvarLancamento() {
       await supaPatch('contas_pagar', `id=eq.${id}`, payload);
       toast('Lançamento atualizado');
     } else {
-      await supaPost('contas_pagar', payload);
-      toast('Lançamento cadastrado');
+      const grupo = crypto.randomUUID();
+      const centavos = Math.round(valorTotal * 100);
+      const base = Math.floor(centavos / qtdParcelas);
+      const resto = centavos - (base * qtdParcelas);
+      const dataBase = new Date(vencimento + 'T12:00:00');
+      const parcelas = Array.from({length:qtdParcelas}, (_, indice) => {
+        const data = new Date(dataBase); data.setDate(data.getDate() + (indice * 30));
+        return {...payload, valor:(base + (indice === qtdParcelas - 1 ? resto : 0))/100,
+          grupo_parcelas:grupo, parcela_num:indice+1, parcelas_total:qtdParcelas,
+          data_vencimento:dataISOLocal(data)};
+      });
+      await supaPost('contas_pagar', parcelas);
+      toast(qtdParcelas > 1 ? `${qtdParcelas} parcelas criadas` : 'Lançamento cadastrado');
     }
 
     fecharModal('modal-lancamento');
@@ -827,6 +921,104 @@ function esc(str) {
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;')
     .replace(/'/g,'&#39;');
+}
+
+// ============================================================
+// Contas a receber e recebimentos parciais
+// ============================================================
+async function carregarClientesFinanceiro() {
+  try {
+    clientesFinanceiro = await supaGet('clientes', 'select=id,nome&order=nome');
+    const opcoes = clientesFinanceiro.map(c => `<option value="${esc(c.id)}" data-nome="${esc(c.nome)}">${esc(c.nome)}</option>`).join('');
+    document.getElementById('rec-cliente').innerHTML = '<option value="">Selecione...</option>' + opcoes;
+    document.getElementById('rec-filtro-cliente').innerHTML = '<option value="">Todos os clientes</option>' + opcoes;
+  } catch(e) { toast('Erro ao carregar clientes', 'erro'); }
+}
+
+function situacaoReceber(conta) {
+  const pago = recebimentos.filter(r => String(r.conta_receber_id) === String(conta.id)).reduce((s,r) => s + Number(r.valor || 0), 0);
+  if (pago >= Number(conta.valor || 0) - 0.005) return 'recebido';
+  if (pago > 0) return 'parcial';
+  const venc = dataLocal(conta.data_vencimento), hoje = new Date(); hoje.setHours(0,0,0,0);
+  if (venc && venc < hoje) return 'vencido';
+  return 'pendente';
+}
+
+async function carregarContasReceber() {
+  try {
+    [contasReceber, recebimentos] = await Promise.all([
+      supaGet('contas_receber', 'select=*&order=data_vencimento'),
+      supaGet('recebimentos', 'select=*&order=data_recebimento.desc')
+    ]);
+    calcularKpisReceber(); filtrarReceber();
+  } catch(e) {
+    document.getElementById('rec-vazio').style.display = 'block';
+    document.getElementById('rec-tabela').style.display = 'none';
+    toast('Execute o arquivo SQL do Financeiro v2 antes de testar Contas a Receber.', 'aviso', 6000);
+  }
+}
+
+function resumoRecebimentos(conta) {
+  const recebido = recebimentos.filter(r => String(r.conta_receber_id) === String(conta.id)).reduce((s,r) => s + Number(r.valor || 0), 0);
+  return {recebido, saldo:Math.max(0, Number(conta.valor || 0) - recebido)};
+}
+
+function calcularKpisReceber() {
+  let total=0, recebido=0, vencido=0;
+  contasReceber.forEach(c => { const r=resumoRecebimentos(c); total+=Number(c.valor||0); recebido+=r.recebido; if(situacaoReceber(c)==='vencido') vencido+=r.saldo; });
+  document.getElementById('rec-kpi-total').textContent=fmtMoeda(total);
+  document.getElementById('rec-kpi-aberto').textContent=fmtMoeda(Math.max(0,total-recebido));
+  document.getElementById('rec-kpi-vencido').textContent=fmtMoeda(vencido);
+  document.getElementById('rec-kpi-recebido').textContent=fmtMoeda(recebido);
+}
+
+function filtrarReceber() {
+  const cliente=document.getElementById('rec-filtro-cliente').value;
+  const situacao=document.getElementById('rec-filtro-situacao').value;
+  const inicio=document.getElementById('rec-data-inicio').value;
+  const fim=document.getElementById('rec-data-fim').value;
+  const lista=contasReceber.filter(c => (!cliente || String(c.cliente_id)===String(cliente)) && (!situacao || situacaoReceber(c)===situacao) && (!inicio || c.data_vencimento>=inicio) && (!fim || c.data_vencimento<=fim));
+  renderReceber(lista);
+}
+
+function renderReceber(lista) {
+  const tabela=document.getElementById('rec-tabela'), vazio=document.getElementById('rec-vazio');
+  tabela.style.display=lista.length?'table':'none'; vazio.style.display=lista.length?'none':'block';
+  document.getElementById('rec-tbody').innerHTML=lista.map(c => {
+    const r=resumoRecebimentos(c), st=situacaoReceber(c);
+    const rotulo={pendente:'Em aberto',parcial:'Parcial',vencido:'Vencido',recebido:'Recebido'}[st];
+    return `<tr><td><strong>${esc(c.cliente_nome)}</strong></td><td>${esc(c.referencia||'—')}</td><td>${c.parcela_num||1}/${c.parcelas_total||1}</td><td class="${st==='vencido'?'vencido-data':''}">${fmtData(c.data_vencimento)}</td><td><strong>${fmtMoeda(c.valor)}</strong></td><td>${fmtMoeda(r.recebido)}</td><td><strong>${fmtMoeda(r.saldo)}</strong></td><td><span class="badge badge-${st==='recebido'?'pago':st==='parcial'?'pendente':st}">${rotulo}</span></td><td>${st!=='recebido'?`<button class="btn btn-primario btn-sm" onclick="abrirRecebimento('${esc(c.id)}')"><i class="ti ti-cash"></i>Receber</button>`:'<i class="ti ti-check" style="color:var(--verde)"></i>'}</td></tr>`;
+  }).join('');
+}
+
+function abrirNovaReceber() {
+  ['rec-valor','rec-referencia','rec-observacoes'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('rec-cliente').value=''; document.getElementById('rec-forma').value='pix'; document.getElementById('rec-parcelas').value='1';
+  const hoje=dataISOLocal(); document.getElementById('rec-emissao').value=hoje; document.getElementById('rec-vencimento').value=hoje;
+  abrirModal('modal-receber');
+}
+
+async function salvarContaReceber() {
+  const clienteId=document.getElementById('rec-cliente').value, valor=parseMoedaBR(document.getElementById('rec-valor').value), vencimento=document.getElementById('rec-vencimento').value;
+  const qtd=Math.max(1,parseInt(document.getElementById('rec-parcelas').value,10)||1);
+  if(!clienteId){toast('Selecione o cliente','erro');return} if(!Number.isFinite(valor)||valor<=0){toast('Informe um valor válido','erro');return} if(!vencimento){toast('Informe o vencimento','erro');return}
+  const opt=document.getElementById('rec-cliente').selectedOptions[0], nome=opt.dataset.nome||opt.textContent;
+  const centavos=Math.round(valor*100), base=Math.floor(centavos/qtd), resto=centavos-base*qtd, grupo=crypto.randomUUID(), dataBase=new Date(vencimento+'T12:00:00');
+  const comum={cliente_id:clienteId,cliente_nome:nome,referencia:document.getElementById('rec-referencia').value.trim()||null,forma_pagamento:document.getElementById('rec-forma').value,situacao:'pendente',data_emissao:document.getElementById('rec-emissao').value||null,grupo_parcelas:grupo,parcelas_total:qtd,observacoes:document.getElementById('rec-observacoes').value.trim()||null};
+  const parcelas=Array.from({length:qtd},(_,i)=>{const d=new Date(dataBase);d.setDate(d.getDate()+i*30);return {...comum,parcela_num:i+1,valor:(base+(i===qtd-1?resto:0))/100,data_vencimento:dataISOLocal(d)}});
+  try{await supaPost('contas_receber',parcelas);fecharModal('modal-receber');toast(qtd>1?`${qtd} parcelas criadas`:'Conta criada','sucesso');await carregarContasReceber()}catch(e){toast('Erro ao salvar: '+e.message,'erro')}
+}
+
+function abrirRecebimento(id) {
+  const c=contasReceber.find(x=>String(x.id)===String(id)); if(!c)return; const r=resumoRecebimentos(c);
+  document.getElementById('pg-conta-id').value=c.id; document.getElementById('pg-resumo').innerHTML=`<strong>${esc(c.cliente_nome)}</strong><br>Valor: ${fmtMoeda(c.valor)} · Recebido: ${fmtMoeda(r.recebido)} · <strong>Saldo: ${fmtMoeda(r.saldo)}</strong>`;
+  document.getElementById('pg-valor').value=r.saldo.toLocaleString('pt-BR',{minimumFractionDigits:2}); document.getElementById('pg-data').value=dataISOLocal(); document.getElementById('pg-forma').value=c.forma_pagamento||'pix'; document.getElementById('pg-comprovante').value=''; document.getElementById('pg-observacoes').value=''; abrirModal('modal-recebimento');
+}
+
+async function salvarRecebimento() {
+  const id=document.getElementById('pg-conta-id').value, c=contasReceber.find(x=>String(x.id)===String(id)), valor=parseMoedaBR(document.getElementById('pg-valor').value); if(!c)return;
+  const resumo=resumoRecebimentos(c); if(!Number.isFinite(valor)||valor<=0||valor>resumo.saldo+0.005){toast('O valor deve ser maior que zero e não pode superar o saldo.','erro');return}
+  try{let comprovante=null;const arquivo=document.getElementById('pg-comprovante').files[0];if(arquivo)comprovante=await fazerUpload(arquivo,c.cliente_nome);await supaPost('recebimentos',{conta_receber_id:c.id,valor,data_recebimento:document.getElementById('pg-data').value,forma_pagamento:document.getElementById('pg-forma').value,comprovante_url:comprovante,observacoes:document.getElementById('pg-observacoes').value.trim()||null});if(valor>=resumo.saldo-0.005)await supaPatch('contas_receber',`id=eq.${c.id}`,{situacao:'recebido'});fecharModal('modal-recebimento');toast('Recebimento registrado','sucesso');await carregarContasReceber()}catch(e){toast('Erro ao registrar: '+e.message,'erro')}
 }
 
 init();

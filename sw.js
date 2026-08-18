@@ -1,10 +1,10 @@
-// PRYNTIX — Service Worker v1.0
-const CACHE = 'pryntix-v1';
+// PRYNTIX — Service Worker v2.0 homologação
+const CACHE = 'pryntix-v2.0.3-homologacao';
 const ARQUIVOS = [
-  '/', '/dashboard.html', '/login.html',
-  '/css/styles.css',
-  '/js/config.js', '/js/auth.js', '/js/utils.js', '/js/menu.js',
-  '/manifest.json'
+  './', './dashboard.html', './login.html',
+  './css/styles.css',
+  './js/config.js', './js/auth.js', './js/utils.js', './js/menu.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', e => {

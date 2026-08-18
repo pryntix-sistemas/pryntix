@@ -84,7 +84,7 @@
         <div class="bem-vindo" id="titulo-bv">Carregando...</div>
         <div class="data-hoje" id="data-hoje"></div>
       </div>
-      <a href="index.html" class="btn btn-primario">
+      <a href="orcamentos.html?novo=1" class="btn btn-primario">
         <i class="ti ti-plus"></i> Novo orçamento
       </a>
     </div>
@@ -120,7 +120,7 @@
       <div class="card">
         <div class="card-header">
           <div class="card-titulo">Últimos orçamentos</div>
-          <a href="index.html" class="btn btn-secundario btn-sm">Ver todos</a>
+          <a href="historico.html" class="btn btn-secundario btn-sm">Ver todos</a>
         </div>
         <div class="card-body" id="ultimos-orc">
           <div class="spinner"></div>
@@ -136,7 +136,7 @@
           <div class="atividade-item">
             <div class="ativ-icone"><i class="ti ti-file-invoice"></i></div>
             <div>
-              <div class="ativ-texto"><a href="index.html" style="color:var(--blue);font-weight:500;">Orçamentos</a> — criar, editar e enviar</div>
+              <div class="ativ-texto"><a href="orcamentos.html?novo=1" style="color:var(--blue);font-weight:500;">Orçamentos</a> — criar, editar e enviar</div>
             </div>
           </div>
           <div class="atividade-item">
@@ -154,7 +154,7 @@
           <div class="atividade-item">
             <div class="ativ-icone"><i class="ti ti-box"></i></div>
             <div>
-              <div class="ativ-texto"><a href="estoque.html" style="color:var(--blue);font-weight:500;">Estoque</a> — produtos e movimentações</div>
+              <div class="ativ-texto"><a href="estoque.html" style="color:var(--blue);font-weight:500;">Estoque</a> — módulo em desenvolvimento</div>
             </div>
           </div>
           <div class="atividade-item">
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Saudação
   const h = new Date().getHours();
   const saud = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
-  document.getElementById('titulo-bv').innerHTML = `${saud}, <span>${sessao.nome}</span> 👋`;
+  document.getElementById('titulo-bv').innerHTML = `${saud}, <span>${escHtml(sessao.nome)}</span> 👋`;
 
   // Data
   document.getElementById('data-hoje').textContent =
@@ -214,15 +214,15 @@ async function carregarDados() {
     const el = document.getElementById('ultimos-orc');
 
     if (!ultimos.length) {
-      el.innerHTML = `<div class="vazio"><i class="ti ti-file-off"></i><p>Nenhum orçamento ainda.</p></div>`;
+      el.innerHTML = `<div class="vazio"><i class="ti ti-file-off"></i><p>Nenhum orçamento ainda.</p><small>Use o botão “Novo orçamento” acima para começar.</small></div>`;
       return;
     }
 
     el.innerHTML = ultimos.map(o => `
       <div class="orc-item">
         <div>
-          <div class="orc-nome">${o.cliente || '—'}</div>
-          <div class="orc-ref">${o.referencia || o.solicitante || '—'}</div>
+          <div class="orc-nome">${numeroOrcamento(o.id)} · ${escHtml(o.cliente || '—')}</div>
+          <div class="orc-ref">${escHtml(o.referencia || o.solicitante || '—')}</div>
         </div>
         <div style="text-align:right">
           <div class="orc-val">${fmtMoeda(o.total)}</div>

@@ -20,18 +20,29 @@
       z-index: 10;
       background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
       border-radius: 12px 12px 0 0;
-      padding: 20px 28px;
+      padding: 18px 28px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 2px solid #E91E8C;
     }
     .orc-masthead img { height: 56px; width: auto; }
+    .orc-issuer { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .orc-issuer-logo { width: 68px; height: 58px; display: grid; place-items: center; flex: 0 0 auto; }
+    .orc-issuer-logo img { max-width: 68px; max-height: 56px; object-fit: contain; }
+    .orc-issuer-copy { min-width: 0; }
+    .orc-issuer-kicker { color: rgba(255,255,255,.48); font-size: 9px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 3px; }
+    .orc-issuer-name { color: #fff; font-size: 19px; font-weight: 750; line-height: 1.15; }
+    .orc-issuer-details { color: rgba(255,255,255,.58); font-size: 10px; line-height: 1.5; margin-top: 4px; }
     .orc-masthead-right { text-align: right; }
     .orc-doc-label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #E91E8C; margin-bottom: 4px; }
     .orc-doc-titulo { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: -0.03em; line-height: 1; margin-bottom: 8px; }
     .orc-meta { font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.8; }
     .orc-meta strong { color: rgba(255,255,255,0.85); }
+    .tenant-context { display: inline-flex; align-items: center; gap: 8px; margin-top: 7px; padding: 6px 10px; border: 1px solid var(--border); background: #fff; border-radius: 999px; color: var(--text-secondary); font-size: 11px; font-weight: 600; }
+    .tenant-context i { color: var(--blue); }
+    .powered-note { color: var(--text-muted); font-size: 10px; margin-left: auto; display: flex; align-items: center; gap: 5px; }
+    .powered-note strong { color: #0A1628; letter-spacing: .04em; }
 
     /* Card do formulário */
     .orc-card { background: #fff; border-radius: 0 0 12px 12px; padding: 24px 28px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #E2E8F0; border-top: none; }
@@ -58,6 +69,8 @@
     .itens-head span { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
     .itens-head span:not(:first-child) { text-align: right; }
     .item-row { display: grid; grid-template-columns: 1fr 70px 140px 110px 32px; gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px solid #F8FAFC; }
+    .item-field { display: contents; }
+    .item-field > span { display: none; }
     .item-row input { background: none; border: none; border-bottom: 1px solid transparent; padding: 6px 0; font-size: 13px; color: var(--text-primary); width: 100%; outline: none; transition: border-color 0.15s; font-family: inherit; }
     .item-row input:focus { border-bottom-color: var(--blue); }
     .item-row input::placeholder { color: #CBD5E1; }
@@ -93,14 +106,30 @@
 
     /* Tabela lista */
     @media (max-width: 768px) {
+      .pagina { padding: 16px !important; }
       .cliente-grid { grid-template-columns: 1fr; }
-      .itens-head, .item-row { grid-template-columns: 1fr 50px 100px 80px 28px; }
+      .itens-head { display: none; }
+      .item-row {
+        grid-template-columns: 64px minmax(0, 1fr) 32px;
+        gap: 10px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .item-field { display: block; min-width: 0; }
+      .item-field > span { display: block; margin-bottom: 3px; color: var(--text-muted); font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+      .item-field-desc { grid-column: 1 / -1; }
+      .item-field-qtd { grid-column: 1; }
+      .item-field-valor { grid-column: 2; }
+      .item-row .btn-remover-item { grid-column: 3; grid-row: 2; align-self: end; }
+      .item-row .item-total { grid-column: 1 / -1; text-align: left; padding-top: 2px; }
+      .item-row .item-total::before { content: 'Total: '; color: var(--text-muted); font-size: 10px; font-weight: 400; }
       .bottom-grid { grid-template-columns: 1fr; }
       .orc-masthead {
       position: sticky;
       top: 0;
       z-index: 10; padding: 16px; flex-direction: column; gap: 12px; align-items: flex-start; }
       .orc-masthead-right { text-align: left; }
+      .orc-issuer { width: 100%; }
       .orc-card { padding: 16px; }
     }
   </style>
@@ -123,7 +152,10 @@
 
     <!-- Header -->
     <div class="pagina-header">
-      <div class="pagina-titulo">Orçamentos</div>
+      <div>
+        <div class="pagina-titulo">Orçamentos</div>
+        <div class="tenant-context"><i class="ti ti-building-store"></i>Empresa operada: <strong id="empresa-contexto">Printer &amp; Co.</strong></div>
+      </div>
       <button class="btn btn-primario" onclick="abrirFormNovo()">
         <i class="ti ti-plus"></i> Novo orçamento
       </button>
@@ -134,11 +166,19 @@
 
       <!-- Masthead Printer & Co. -->
       <div class="orc-masthead">
-        <img id="logo-orc" src="" alt="Printer & Co." onerror="this.style.display='none'">
+        <div class="orc-issuer">
+          <div class="orc-issuer-logo"><img id="logo-orc" src="" alt="Logo da empresa"></div>
+          <div class="orc-issuer-copy">
+            <div class="orc-issuer-kicker">Emitido por</div>
+            <div class="orc-issuer-name" id="empresa-orc-nome">Printer &amp; Co.</div>
+            <div class="orc-issuer-details" id="empresa-orc-detalhes">Identidade comercial da empresa emissora</div>
+          </div>
+        </div>
         <div class="orc-masthead-right">
           <div class="orc-doc-label">Documento Comercial</div>
           <div class="orc-doc-titulo">Orçamento</div>
           <div class="orc-meta">
+            <div><strong>Nº</strong> &nbsp;<span id="meta-numero">A gerar</span></div>
             <div><strong>Emissão</strong> &nbsp;<span id="meta-emissao">—</span></div>
             <div><strong>Validade</strong> &nbsp;<span id="meta-validade">—</span></div>
             <div id="meta-ref-row" style="display:none"><strong>Ref.</strong> &nbsp;<span id="meta-ref">—</span></div>
@@ -153,7 +193,7 @@
         <div class="cliente-grid">
           <div>
             <div class="form-grupo autocomplete-wrap">
-              <label>Cliente / Empresa</label>
+              <label>Cliente</label>
               <input type="text" id="campo-cliente" placeholder="Buscar cliente..." autocomplete="off"
                 oninput="filtrarClientes(this.value)" onfocus="mostrarTodosClientes()">
               <div class="autocomplete-lista" id="lista-clientes"></div>
@@ -220,10 +260,12 @@
 
         <!-- Ações -->
         <div class="acoes-strip">
-          <button class="btn btn-primario" onclick="salvarOrcamento()"><i class="ti ti-device-floppy"></i> Salvar</button>
+          <button class="btn btn-primario" id="btn-salvar-orcamento" onclick="salvarOrcamento()"><i class="ti ti-device-floppy"></i> Salvar</button>
+          <button class="btn btn-secundario" id="btn-salvar-novo" onclick="salvarOrcamento(true)"><i class="ti ti-file-plus"></i> Salvar e criar outro</button>
           <button class="btn" id="btn-wpp" onclick="enviarWhatsApp()" style="background:#25D366;color:#fff;display:none"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>
           <button class="btn btn-secundario" id="btn-pdf" onclick="gerarPDF()" style="display:none"><i class="ti ti-download"></i> PDF</button>
           <button class="btn btn-secundario" onclick="fecharForm()"><i class="ti ti-x"></i> Cancelar</button>
+          <div class="powered-note"><i class="ti ti-bolt"></i>Documento gerado com <strong>PRYNTIX</strong></div>
         </div>
 
       </div>
@@ -250,16 +292,15 @@ var orcamentos = [];
 var clientes   = [];
 var config     = {};
 var editandoId = null;
+var editandoToken = null;
 var itemCnt    = 0;
+var salvandoOrcamento = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
   renderizarMenu('orcamentos.html');
 
-  var logoEl = document.getElementById('logo-orc');
-  if (logoEl && LOGO_B64) logoEl.src = LOGO_B64;
-
   var val = new Date(); val.setDate(val.getDate() + 15);
-  document.getElementById('campo-validade').value = val.toISOString().split('T')[0];
+  document.getElementById('campo-validade').value = dataISOLocal(val);
   atualizarMeta();
 
   await Promise.all([carregarConfig(), carregarClientes()]);
@@ -273,12 +314,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (orcs && orcs[0]) { preencherFormulario(orcs[0]); return; }
     } catch(e) {}
   }
-  adicionarItem();
+  // Ao entrar nesta tela para criar, o formulário já fica pronto para preencher.
+  abrirFormNovo();
 });
 
 // ===== CONFIG =====
 async function carregarConfig() {
   try { var d = await supaGet('config','select=*&limit=1'); config = d[0] || {}; } catch { config = {}; }
+  aplicarIdentidadeEmpresa();
+}
+
+function aplicarIdentidadeEmpresa() {
+  var empresa = config.nome || 'Printer & Co.';
+  var detalhes = [config.cnpj ? 'CNPJ ' + config.cnpj : '', config.telefone || '', config.email || ''].filter(Boolean).join(' · ');
+  document.getElementById('empresa-contexto').textContent = empresa;
+  document.getElementById('empresa-orc-nome').textContent = empresa;
+  document.getElementById('empresa-orc-detalhes').textContent = detalhes || 'Empresa emissora do orçamento';
+  var logoEl = document.getElementById('logo-orc');
+  var logo = config.logo || LOGO_B64;
+  if (logo) {
+    logoEl.src = logo;
+    logoEl.style.display = 'block';
+    logoEl.onerror = function() { this.style.display = 'none'; };
+  } else {
+    logoEl.style.display = 'none';
+  }
 }
 
 // ===== CLIENTES =====
@@ -303,9 +363,12 @@ function filtrarClientes(busca) {
 function renderDropdown(lista, dd) {
   dd.innerHTML = lista.map(c => {
     var cnpj = c.cnpj || c.documento || '';
-    return '<div class="autocomplete-item" onclick="selecionarCliente(\'' + c.id + '\',\'' + c.nome.replace(/'/g,"\'") + '\',\'' + cnpj.replace(/'/g,"\'") + '\')">'
-      + '<div class="autocomplete-nome">' + c.nome + '</div>'
-      + (cnpj ? '<div class="autocomplete-cnpj">' + cnpj + '</div>' : '')
+    var idArg = encodeURIComponent(String(c.id)).replace(/'/g,'%27');
+    var nomeArg = encodeURIComponent(String(c.nome || '')).replace(/'/g,'%27');
+    var cnpjArg = encodeURIComponent(String(cnpj)).replace(/'/g,'%27');
+    return '<div class="autocomplete-item" onclick="selecionarCliente(decodeURIComponent(\'' + idArg + '\'),decodeURIComponent(\'' + nomeArg + '\'),decodeURIComponent(\'' + cnpjArg + '\'))">'
+      + '<div class="autocomplete-nome">' + escHtml(c.nome) + '</div>'
+      + (cnpj ? '<div class="autocomplete-cnpj">' + escHtml(cnpj) + '</div>' : '')
       + '</div>';
   }).join('');
   dd.classList.add('aberta');
@@ -343,9 +406,9 @@ function adicionarItem(desc, qtd, preco) {
   div.className = 'item-row';
   div.id = id;
   div.innerHTML =
-    '<input type="text" placeholder="Descrição do item" value="' + (desc||'') + '" oninput="calcTotais()">'
-    + '<input type="number" class="c" value="' + (qtd||1) + '" min="0" step="1" oninput="calcTotais()">'
-    + '<input type="number" class="r" value="' + (preco||'') + '" min="0" step="0.01" placeholder="0,00" oninput="calcTotais()">'
+    '<label class="item-field item-field-desc"><span>Descrição</span><input type="text" aria-label="Descrição do item" placeholder="Descrição do item" value="' + escHtml(desc||'') + '" oninput="calcTotais()"></label>'
+    + '<label class="item-field item-field-qtd"><span>Qtd.</span><input type="number" aria-label="Quantidade" class="c" value="' + (qtd||1) + '" min="0" step="1" oninput="calcTotais()"></label>'
+    + '<label class="item-field item-field-valor"><span>Valor unitário</span><input type="number" aria-label="Valor unitário" class="r" value="' + (preco||'') + '" min="0" step="0.01" placeholder="0,00" oninput="calcTotais()"></label>'
     + '<div class="item-total zero" id="itv_' + id + '">R$ 0,00</div>'
     + '<button class="btn-remover-item" onclick="removerItem(\'' + id + '\')" title="Remover"><i class="ti ti-x" style="font-size:13px"></i></button>';
   document.getElementById('itens-container').appendChild(div);
@@ -399,6 +462,7 @@ function coletarItens() {
 // ===== FORMULÁRIO =====
 function abrirFormNovo() {
   editandoId = null;
+  editandoToken = null;
   document.getElementById('campo-cliente').value   = '';
   document.getElementById('campo-cnpj-cliente').value = '';
   document.getElementById('campo-solicitante').value = '';
@@ -408,9 +472,10 @@ function abrirFormNovo() {
   document.getElementById('tipo-desconto').value    = 'pct';
   document.getElementById('itens-container').innerHTML = '';
   document.getElementById('meta-ref-row').style.display = 'none';
+  document.getElementById('meta-numero').textContent = 'A gerar';
   itemCnt = 0;
   var val = new Date(); val.setDate(val.getDate() + 15);
-  document.getElementById('campo-validade').value = val.toISOString().split('T')[0];
+  document.getElementById('campo-validade').value = dataISOLocal(val);
   document.getElementById('btn-wpp').style.display = 'none';
   document.getElementById('btn-pdf').style.display = 'none';
   adicionarItem();
@@ -422,10 +487,13 @@ function abrirFormNovo() {
 function fecharForm() {
   document.getElementById('painel-form').style.display = 'none';
   editandoId = null;
+  editandoToken = null;
 }
 
 function preencherFormulario(orc) {
   editandoId = orc.id;
+  editandoToken = orc.public_token || null;
+  document.getElementById('meta-numero').textContent = numeroOrcamento(orc.id);
   document.getElementById('campo-cliente').value    = orc.cliente || '';
   document.getElementById('campo-cnpj-cliente').value = orc.cnpj_cli || '';
   document.getElementById('campo-solicitante').value = orc.solicitante || '';
@@ -447,6 +515,8 @@ function editarOrcamento(id) {
   var orc = orcamentos.find(o => o.id === id);
   if (!orc) return;
   editandoId = id;
+  editandoToken = orc.public_token || null;
+  document.getElementById('meta-numero').textContent = numeroOrcamento(orc.id);
   document.getElementById('campo-cliente').value    = orc.cliente || '';
   document.getElementById('campo-cnpj-cliente').value = orc.cnpj_cli || '';
   document.getElementById('campo-solicitante').value = orc.solicitante || '';
@@ -467,14 +537,19 @@ function editarOrcamento(id) {
 }
 
 // ===== SALVAR =====
-async function salvarOrcamento() {
+async function salvarOrcamento(criarOutro = false) {
+  var btnSalvar = document.getElementById('btn-salvar-orcamento');
+  var btnSalvarNovo = document.getElementById('btn-salvar-novo');
+  if (salvandoOrcamento) return;
   var cliente = document.getElementById('campo-cliente').value.trim();
   if (!cliente) { toast('Informe o cliente.','erro'); return; }
   var itens = coletarItens();
   if (!itens.length) { toast('Adicione ao menos um item.','erro'); return; }
+  if (itens.some(i => i.qtd <= 0 || i.preco < 0)) { toast('Revise quantidade e valor dos itens.','erro'); return; }
   var sub   = itens.reduce((s,i) => s + i.total, 0);
   var dv    = parseFloat(document.getElementById('campo-desconto').value)||0;
   var dt    = document.getElementById('tipo-desconto').value;
+  if (dv < 0 || (dt === 'pct' && dv > 100)) { toast('Informe um desconto válido.','erro'); return; }
   var dr    = dt === 'pct' ? sub * dv / 100 : dv;
   var total = Math.max(0, sub - dr);
   var dados = {
@@ -486,6 +561,10 @@ async function salvarOrcamento() {
     valido_ate:  document.getElementById('campo-validade').value,
     itens, desconto: dv, tipo_desc: dt, total, status: 'pendente'
   };
+  salvandoOrcamento = true;
+  btnSalvar.disabled = true;
+  btnSalvarNovo.disabled = true;
+  btnSalvar.innerHTML = '<i class="ti ti-loader-2"></i> Salvando...';
   try {
     if (editandoId) {
       await supaPatch('orcamentos', 'id=eq.' + editandoId, dados);
@@ -493,13 +572,24 @@ async function salvarOrcamento() {
     } else {
       var novo = await supaPost('orcamentos', dados);
       editandoId = novo[0].id;
+      editandoToken = novo[0].public_token || null;
       toast('Orçamento salvo!','sucesso');
     }
+    document.getElementById('meta-numero').textContent = numeroOrcamento(editandoId);
     document.getElementById('btn-wpp').style.display = '';
     document.getElementById('btn-pdf').style.display = '';
-    // Após 1.5s redireciona para histórico
-    setTimeout(() => { window.location.href = 'historico.html'; }, 1500);
+    if (criarOutro) {
+      var numeroSalvo = numeroOrcamento(editandoId);
+      abrirFormNovo();
+      toast(numeroSalvo + ' salvo. Novo orçamento pronto para preencher!','sucesso',5000);
+    }
   } catch(e) { toast('Erro ao salvar: ' + e.message,'erro'); }
+  finally {
+    salvandoOrcamento = false;
+    btnSalvar.disabled = false;
+    btnSalvarNovo.disabled = false;
+    btnSalvar.innerHTML = '<i class="ti ti-device-floppy"></i> Salvar';
+  }
 }
 
 // ===== LISTA =====
@@ -512,6 +602,7 @@ async function salvarOrcamento() {
 // ===== WHATSAPP =====
 async function enviarWhatsApp() {
   if (!editandoId) { toast('Salve o orçamento primeiro.','aviso'); return; }
+  if (!editandoToken) { toast('Execute a migração v2 para gerar o link público seguro.','aviso'); return; }
   var cliente  = document.getElementById('campo-cliente').value.trim();
   var solic    = document.getElementById('campo-solicitante').value.trim();
   var ref      = document.getElementById('campo-ref').value.trim();
@@ -520,27 +611,34 @@ async function enviarWhatsApp() {
   var itens    = coletarItens();
   var totalTxt = document.getElementById('t-total').textContent;
   var empresa  = config.nome || 'Printer & Co.';
+  var numero   = numeroOrcamento(editandoId);
   var h = new Date().getHours();
   var saud = h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
-  var link = window.location.origin + window.location.pathname.replace('orcamentos.html','ver.html') + '?id=' + editandoId;
+  var link = urlOrcamentoPublico(editandoToken);
 
-  var itensTexto = itens.map(i => '▪ ' + i.desc + ' · Qtd: ' + i.qtd + ' · Total: ' + fmt(i.total)).join('\n');
+  // Mantém a mensagem compatível com todos os aparelhos e versões do WhatsApp.
+  var itensTexto = itens.map(i => '- ' + i.desc + ' | Qtd: ' + i.qtd + ' | Total: ' + fmt(i.total)).join('\n');
 
-  var msg = saud + ',\n\nSegue o orçamento da *' + empresa + '* referente a:\n'
+  var msg = saud + ',\n\nSegue o orçamento *' + numero + '* da *' + empresa + '* referente a:\n'
     + (ref ? 'Ref.: *' + ref + '*\n' : '')
     + 'Empresa: *' + cliente + '*\n'
     + (solic ? 'Solicitante: *' + solic + '*\n' : '')
     + (valFmt ? 'Válido até: ' + valFmt + '\n' : '')
     + '\nItens:\n' + itensTexto
-    + '\n\n*Total: ' + totalTxt + '*\n\nEm caso de dúvidas, estamos à disposição!\n\nVisualizar orçamento:\n' + link;
+    + '\n\n*Total: ' + totalTxt + '*\n\nEm caso de dúvidas, estamos à disposição!\n\nAtenciosamente,\n*' + empresa + '*'
+    + (config.telefone ? '\n' + config.telefone : '')
+    + (config.email ? '\n' + config.email : '')
+    + '\n\nVisualizar orçamento:\n' + link;
 
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
 // ===== LINK =====
 function copiarLink(id) {
-  var link = window.location.origin + window.location.pathname.replace('orcamentos.html','ver.html') + '?id=' + id;
-  navigator.clipboard.writeText(link).then(() => toast('Link copiado!','sucesso'));
+  var orc = orcamentos.find(o => String(o.id) === String(id));
+  if (!orc?.public_token) { toast('Execute a migração v2 para gerar o link público seguro.','aviso'); return; }
+  var link = urlOrcamentoPublico(orc.public_token);
+  copiarTexto(link).then(ok => toast(ok ? 'Link copiado!' : 'Não foi possível copiar o link.', ok ? 'sucesso' : 'erro'));
 }
 
 // ===== PDF =====
@@ -559,6 +657,7 @@ async function gerarPDF() {
   var total    = document.getElementById('t-total').textContent;
   var empresa  = config.nome || 'Printer & Co.';
   var cnpj_emp = config.cnpj || '55.293.091/0001-92';
+  var contato_emp = [config.telefone || '', config.email || ''].filter(Boolean).join(' · ');
 
   // Cabeçalho preto
   doc.setFillColor(17,17,17); doc.rect(0,0,210,32,'F');
@@ -569,7 +668,7 @@ async function gerarPDF() {
   doc.setTextColor(255,255,255); doc.setFontSize(18); doc.setFont(undefined,'bold');
   doc.text('Orçamento',200,20,{align:'right'});
   doc.setFontSize(8); doc.setFont(undefined,'normal'); doc.setTextColor(180,180,180);
-  doc.text('Emissão: '+new Date().toLocaleDateString('pt-BR'),200,27,{align:'right'});
+  doc.text(numeroOrcamento(editandoId)+'  ·  Emissão: '+new Date().toLocaleDateString('pt-BR'),200,27,{align:'right'});
 
   // Linha rosa
   doc.setDrawColor(233,30,140); doc.setLineWidth(0.8);
@@ -579,14 +678,15 @@ async function gerarPDF() {
   doc.setTextColor(0,0,0); doc.setFontSize(9);
 
   // Info cliente
-  doc.setFont(undefined,'bold'); doc.setFillColor(248,250,252); doc.rect(10,y-4,190,28,'F');
-  doc.text('CLIENTE',14,y); doc.setFont(undefined,'normal'); doc.text(cliente,14,y+6);
+  doc.setFont(undefined,'bold'); doc.setFillColor(248,250,252); doc.rect(10,y-4,190,34,'F');
+  doc.text('CLIENTE',14,y); doc.setFont(undefined,'normal');
+  doc.text(doc.splitTextToSize(cliente,58).slice(0,2),14,y+6);
   if (cnpj_cli) { doc.setFont(undefined,'bold'); doc.text('CNPJ/CPF:',80,y); doc.setFont(undefined,'normal'); doc.text(cnpj_cli,80,y+6); }
   doc.setFont(undefined,'bold'); doc.text('EMITIDO POR',150,y); doc.setFont(undefined,'normal'); doc.text(empresa,150,y+6); doc.text(cnpj_emp,150,y+10);
   if (solic) { doc.setFont(undefined,'bold'); doc.text('Solicitante:',14,y+14); doc.setFont(undefined,'normal'); doc.text(solic,42,y+14); }
   doc.setFont(undefined,'bold'); doc.text('Validade:',80,y+14); doc.setFont(undefined,'normal'); doc.text(valFmt,80+22,y+14);
-  if (ref) { doc.setFont(undefined,'bold'); doc.text('Ref.:',14,y+20); doc.setFont(undefined,'normal'); doc.text(ref.substring(0,80),26,y+20); }
-  y += 36;
+  if (ref) { doc.setFont(undefined,'bold'); doc.text('Ref.:',14,y+24); doc.setFont(undefined,'normal'); doc.text(doc.splitTextToSize(ref,168).slice(0,2),26,y+24); }
+  y += 42;
 
   // Tabela
   doc.setFillColor(17,17,17); doc.rect(10,y,190,9,'F');
@@ -625,9 +725,11 @@ async function gerarPDF() {
   }
 
   doc.setFontSize(7); doc.setTextColor(150,150,150);
-  doc.text(empresa + ' · CNPJ: ' + cnpj_emp + ' · Gerado por PRYNTIX em ' + new Date().toLocaleString('pt-BR'),14,290);
+  doc.text(empresa + ' · CNPJ: ' + cnpj_emp + (contato_emp ? ' · ' + contato_emp : ''),14,286);
+  doc.setTextColor(175,175,175);
+  doc.text('Documento gerado com PRYNTIX em ' + new Date().toLocaleString('pt-BR'),14,291);
 
-  doc.save('orcamento-' + editandoId + '-' + cliente.replace(/\s+/g,'_').substring(0,20) + '.pdf');
+  doc.save(numeroOrcamento(editandoId) + '-' + cliente.replace(/\s+/g,'_').substring(0,20) + '.pdf');
   toast('PDF gerado!','sucesso');
 }
 

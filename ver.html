@@ -9,7 +9,12 @@
   body { font-family: Arial, Helvetica, sans-serif; background: #F0F0F0; min-height: 100vh; padding: 1.5rem 1rem; color: #111; -webkit-font-smoothing: antialiased; }
   .card { max-width: 680px; margin: 0 auto; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
   .hdr { background: #111; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E91E8C; gap: 16px; }
-  .hdr img { height: 56px; width: auto; }
+  .issuer { display:flex; align-items:center; gap:14px; min-width:0; }
+  .issuer-logo { width:64px; min-height:54px; display:grid; place-items:center; }
+  .issuer-logo img { max-height: 54px; max-width:64px; width: auto; object-fit:contain; }
+  .issuer-kicker { color:rgba(255,255,255,.46); font-size:8px; text-transform:uppercase; letter-spacing:.16em; font-weight:700; }
+  .issuer-name { color:#fff; font-size:18px; line-height:1.15; font-weight:750; margin-top:3px; }
+  .issuer-details { color:rgba(255,255,255,.58); font-size:9px; margin-top:4px; line-height:1.45; }
   .hdr-right { text-align: right; }
   .doc-label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #E91E8C; margin-bottom: 4px; }
   .doc-titulo { font-size: 26px; font-weight: 700; color: white; letter-spacing: -0.03em; line-height: 1; margin-bottom: 8px; }
@@ -73,18 +78,19 @@ var LOGO      = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAE7CAYAAAAB7
 
 function fmt(v) { return 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtData(d) { if (!d) return '—'; var s=String(d).substring(0,10); var p=s.split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d; }
+function numeroOrcamento(id) { return 'ORC-' + String(id).padStart(6,'0'); }
+function esc(v) { return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 async function carregar() {
   var params = new URLSearchParams(window.location.search);
-  var id = params.get('id');
-  if (!id) { errar('Link inválido.'); return; }
+  var token = params.get('token');
+  if (!token) { errar('Link inválido.'); return; }
   try {
-    var res  = await fetch(SUPA_URL+'/rest/v1/orcamentos?id=eq.'+id+'&select=*',{headers:{'apikey':SUPA_ANON,'Authorization':'Bearer '+SUPA_ANON}});
+    var res  = await fetch(SUPA_URL+'/rest/v1/rpc/get_orcamento_publico',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_ANON,'Authorization':'Bearer '+SUPA_ANON},body:JSON.stringify({p_token:token})});
     var data = await res.json();
-    var orc  = data[0];
+    var orc  = data && data.orcamento;
     if (!orc) { errar('Orçamento não encontrado.'); return; }
-    var resC = await fetch(SUPA_URL+'/rest/v1/config?select=*&limit=1',{headers:{'apikey':SUPA_ANON,'Authorization':'Bearer '+SUPA_ANON}});
-    var cfg  = (await resC.json())[0] || {};
+    var cfg  = data.config || {};
     renderizar(orc, cfg);
   } catch(e) { errar('Erro ao carregar.'); }
 }
@@ -98,6 +104,8 @@ function renderizar(orc, cfg) {
   var cnpj_e  = cfg.cnpj   || '55.293.091/0001-92';
   var tel_e   = cfg.telefone|| '';
   var email_e = cfg.email   || '';
+  var end_e   = cfg.endereco|| '';
+  var logo_e  = cfg.logo || LOGO;
   var itensRaw = orc.itens || [];
   var sub = 0;
 
@@ -108,7 +116,7 @@ function renderizar(orc, cfg) {
     var tot   = i.total||(qtd*preco); sub += tot;
     var bg = idx%2===1?'background:#F9F9F9':'';
     return '<tr style="'+bg+'">'
-      +'<td style="padding:9px 10px;border-bottom:1px solid #F0F0F0">'+desc+'</td>'
+      +'<td style="padding:9px 10px;border-bottom:1px solid #F0F0F0">'+esc(desc)+'</td>'
       +'<td style="padding:9px 10px;text-align:right;border-bottom:1px solid #F0F0F0">'+qtd+'</td>'
       +'<td style="padding:9px 10px;text-align:right;border-bottom:1px solid #F0F0F0">'+fmt(preco)+'</td>'
       +'<td style="padding:9px 10px;text-align:right;font-weight:700;border-bottom:1px solid #F0F0F0">'+fmt(tot)+'</td>'
@@ -125,32 +133,34 @@ function renderizar(orc, cfg) {
     : '';
 
   var obsBlock = (orc.obs||orc.observacoes)
-    ? '<div class="obs-block"><div class="obs-label">Observações</div><div class="obs-text">'+(orc.obs||orc.observacoes)+'</div></div>'
+    ? '<div class="obs-block"><div class="obs-label">Observações</div><div class="obs-text">'+esc(orc.obs||orc.observacoes)+'</div></div>'
     : '';
 
-  var f1 = empresa + (cnpj_e ? ' · CNPJ: '+cnpj_e : '');
-  var f2 = [tel_e,email_e].filter(Boolean).join(' · ');
+  var f1 = esc(empresa + (cnpj_e ? ' · CNPJ: '+cnpj_e : ''));
+  var f2 = esc([tel_e,email_e,end_e].filter(Boolean).join(' · '));
+  var issuerDetails = [(cnpj_e?'CNPJ '+cnpj_e:''),tel_e,email_e].filter(Boolean).join(' · ');
 
   var link = window.location.href;
 
   document.getElementById('app').innerHTML =
     '<div class="hdr">'
-      +'<img src="'+LOGO+'" alt="'+empresa+'" onerror="this.style.display='none'">'
+      +'<div class="issuer"><div class="issuer-logo">'+(logo_e?'<img src="'+esc(logo_e)+'" alt="Logo '+esc(empresa)+'">':'')+'</div><div><div class="issuer-kicker">Emitido por</div><div class="issuer-name">'+esc(empresa)+'</div><div class="issuer-details">'+esc(issuerDetails)+'</div></div></div>'
       +'<div class="hdr-right">'
         +'<div class="doc-label">Documento Comercial</div>'
         +'<div class="doc-titulo">Orçamento</div>'
         +'<div class="meta">'
+          +'<div><strong>Nº</strong> &nbsp;'+numeroOrcamento(orc.id)+'</div>'
           +'<div><strong>Emissão</strong> &nbsp;'+fmtData(orc.criado_em)+'</div>'
           +'<div><strong>Validade</strong> &nbsp;'+fmtData(orc.valido_ate||orc.validade)+'</div>'
-          +(orc.referencia?'<div><strong>Ref.</strong> &nbsp;'+orc.referencia+'</div>':'')
+          +(orc.referencia?'<div><strong>Ref.</strong> &nbsp;'+esc(orc.referencia)+'</div>':'')
         +'</div>'
       +'</div>'
     +'</div>'
     +'<div class="body">'
       +'<div class="info-grid">'
-        +'<div class="cf"><label>Cliente</label><span>'+(orc.cliente||orc.cliente_nome||'—')+'</span>'+(orc.solicitante?'<div style="font-size:11px;color:#888;margin-top:2px">Solicitante: '+orc.solicitante+'</div>':'')+'</div>'
-        +'<div class="cf"><label>CNPJ / CPF</label><span>'+(orc.cnpj_cli||'—')+'</span></div>'
-        +'<div class="cf" style="text-align:right"><label>Emitido por</label><span style="font-size:12px">'+empresa+'<br><span style="font-size:10px;color:#888;font-weight:400">'+cnpj_e+'</span></span></div>'
+        +'<div class="cf"><label>Cliente</label><span>'+esc(orc.cliente||orc.cliente_nome||'—')+'</span>'+(orc.solicitante?'<div style="font-size:11px;color:#888;margin-top:2px">Solicitante: '+esc(orc.solicitante)+'</div>':'')+'</div>'
+        +'<div class="cf"><label>CNPJ / CPF</label><span>'+esc(orc.cnpj_cli||'—')+'</span></div>'
+        +'<div class="cf" style="text-align:right"><label>Emitido por</label><span style="font-size:12px">'+esc(empresa)+'<br><span style="font-size:10px;color:#888;font-weight:400">'+esc(cnpj_e)+'</span></span></div>'
       +'</div>'
       +'<div class="sec-label">Itens do orçamento</div>'
       +'<table><thead><tr><th style="width:50%">Descrição</th><th style="text-align:right">Qtd.</th><th style="text-align:right">Val. unitário</th><th style="text-align:right">Total</th></tr></thead><tbody>'+itensHtml+'</tbody></table>'
@@ -166,16 +176,16 @@ function renderizar(orc, cfg) {
       +'<button class="btn-wpp" onclick="compartilharWpp()">📱 Enviar resposta pelo WhatsApp</button>'
       +'<button class="btn-pdf" onclick="window.print()">📄 Salvar PDF</button>'
     +'</div>'
-    +'<div class="pryntix-badge">Gerado por <span>PRYNTIX</span> · '+empresa+'</div>';
+    +'<div class="pryntix-badge">Documento de '+esc(empresa)+' · Gerado com <span>PRYNTIX</span></div>';
 
-  document.title = 'Orçamento #'+orc.id+' — '+empresa;
+  document.title = numeroOrcamento(orc.id)+' — '+empresa;
   window._orc = orc;
 }
 
 function compartilharWpp() {
   var orc = window._orc;
   if (!orc) return;
-  var msg = 'Olá! Recebi o orçamento #'+orc.id+' e gostaria de confirmar o pedido.\n\n'
+  var msg = 'Olá! Recebi o orçamento '+numeroOrcamento(orc.id)+' e gostaria de confirmar o pedido.\n\n'
     +(orc.referencia?'Ref.: '+orc.referencia+'\n':'')
     +'Link: '+window.location.href;
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
